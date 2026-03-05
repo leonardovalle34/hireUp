@@ -1,0 +1,20 @@
+<template>
+  <div class="app-background">
+    <router-view />
+  </div>
+</template>
+
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+.app-background {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #034fb9 0%, #2e2992 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+</style>
