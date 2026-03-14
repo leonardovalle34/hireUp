@@ -9,14 +9,14 @@ const auth = useAuthStore()
 const router = useRouter()
 
 async function handleLogin() {
-  await auth.signIn(email.value, password.value)
+  await auth.login(email.value, password.value)
   if (auth.user) router.push('/')
 }
 
-async function handleSignup() {
+/*async function handleSignup() {
   await auth.signUp(email.value, password.value)
   if (auth.user) router.push('/')
-}
+}*/
 </script>
 
 <template>
