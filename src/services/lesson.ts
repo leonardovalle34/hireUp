@@ -39,7 +39,7 @@ export async function saveAnswer(
   userId: number,
   lessonId: number,
   sessionId: string,
-  answer: string,
+  answer: string
 ) {
   const { data, error } = await supabase.from('user_answers').insert({
     user_id: userId,
