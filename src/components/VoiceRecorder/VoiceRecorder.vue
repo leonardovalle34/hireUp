@@ -4,13 +4,24 @@
   };
 </script>
 <script lang="ts" setup>
-  import { onMounted, ref } from 'vue';
+  import { onMounted, ref, watch } from 'vue';
 
-  const emit = defineEmits(['result']);
+  const props = defineProps<{
+    modelValue?: string;
+  }>();
+
+  const emit = defineEmits(['update:modelValue']);
   const recording = ref(false);
   const transcript = ref('');
 
   let recognition: any = null;
+
+  watch(
+    () => props.modelValue,
+    (newValue) => {
+      transcript.value = newValue ?? '';
+    },
+  );
 
   onMounted(() => {
     const speechRecognition =
@@ -22,6 +33,8 @@
     }
   });
 
+  const SpeechRecognition: any =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
   recognition = new SpeechRecognition();
 
   recognition.lang = 'en-US';
@@ -34,7 +47,7 @@
       text += event.results[i][0].transcript;
     }
     transcript.value = text;
-    emit('result', text);
+    emit('update:modelValue', text);
   };
 
   function startRecording() {

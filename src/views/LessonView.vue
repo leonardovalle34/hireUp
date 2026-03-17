@@ -1,48 +1,56 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+  import { ref, onMounted } from 'vue';
+  import { useLessonStore } from '@/stores/lesson';
+  import { useRouter } from 'vue-router';
+  import VoiceRecorder from '@/components/VoiceRecorder/VoiceRecorder.vue';
 
-interface Lesson {
-  id: number
-  title: string
-  date: string
-}
+  const lessonStore = useLessonStore();
+  const router = useRouter();
+  const answer = ref('');
 
-const lessons = ref<Lesson[]>([])
+  const submit = async () => {
+    console.log('Submitting answer:', answer.value);
+    answer.value =
+      'Ah, this is a common issue when working with modern JavaScript features and build targets. Let me walk you through my diagnostic and resolution approach.First, Id identify that this is a target environment compatibility issue. The error tells us that top-level await is being used, but our build target (Chrome 87, Edge 88, etc.) doesnt support it. Top-level await was introduced in ES2022, so were dealing with a mismatch between our code and our browser support requirements.';
+    await lessonStore.submitAnswer(answer.value);
+    answer.value = '';
+  };
 
-onMounted(() => {
-  lessons.value = [
-    {
-      id: 1,
-      title: 'Present Simple',
-      date: '2026-03-10',
-    },
-    {
-      id: 2,
-      title: 'Past Simple',
-      date: '2026-03-12',
-    },
-  ]
-})
+  onMounted(async () => {
+    const canStart = await lessonStore.canStartLesson();
+    if (!canStart) {
+      router.push('pricing');
+      return;
+    }
+    await lessonStore.fetchLesson();
+    await lessonStore.startLesson();
+  });
 </script>
 
 <template>
   <div class="lessons">
-    <h1>My Lessons</h1>
+    <h1>Daily Interview Practice</h1>
 
-    <a-list bordered :data-source="lessons">
-      <template #renderItem="{ item }">
-        <a-list-item>
-          <a-list-item-meta :title="item.title" :description="item.date" />
-        </a-list-item>
-      </template>
-    </a-list>
+    <div v-if="lessonStore.loading">Loading lesson...</div>
+
+    <div v-if="lessonStore.lesson">
+      <a-card>
+        <h2>{{ lessonStore.lesson.question }}</h2>
+
+        <VoiceRecorder :modelValue="answer" @result="answer = $event" />
+
+        <a-button type="primary" block style="margin-top: 20px" @click="submit">
+          Submit Answer
+        </a-button>
+      </a-card>
+    </div>
   </div>
 </template>
 
 <style scoped>
-.lessons {
-  max-width: 800px;
-  margin: auto;
-  padding: 40px;
-}
+  .lessons {
+    max-width: 800px;
+    margin: auto;
+    padding: 40px;
+  }
 </style>

@@ -5,6 +5,7 @@ import { canUserTakeLesson, getLesson, createLessonSession, saveAnswer } from '@
 export const useLessonStore = defineStore('lesson', {
   state: () => ({
     lesson: null as any,
+    session: null as any,
     loading: false as boolean,
     error: null as any,
   }),
@@ -27,12 +28,17 @@ export const useLessonStore = defineStore('lesson', {
 
     async startLesson() {
       const auth = useAuthStore()
-      return await createLessonSession(auth.user.id, this.lesson.id)
+      const session = await createLessonSession(auth.user.id, this.lesson.id)
+      this.session = session
+      return session
     },
 
-    async submitAnswer(sessionId: string, answer: string) {
+    async submitAnswer( answer: string) {
       const auth = useAuthStore()
-      await saveAnswer(auth.user.id, this.lesson.id, sessionId, answer)
+      const result = await saveAnswer(auth.user.id, this.lesson.id,  answer)
+
+      console.log('Answer saved:', result)
+      return result
     },
   },
 })
