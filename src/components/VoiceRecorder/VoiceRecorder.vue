@@ -4,13 +4,25 @@
   };
 </script>
 <script lang="ts" setup>
-  import { onMounted, ref } from 'vue';
+  import { onMounted, ref, watch } from 'vue';
 
-  const emit = defineEmits(['result']);
+  const props = defineProps<{
+    modelValue?: string;
+  }>();
+
+  const emit = defineEmits(['update:modelValue']);
   const recording = ref(false);
   const transcript = ref('');
+  const finalTranscript = ref('');
 
   let recognition: any = null;
+
+  watch(
+    () => props.modelValue,
+    (newValue) => {
+      transcript.value = newValue ?? '';
+    },
+  );
 
   onMounted(() => {
     const speechRecognition =
@@ -22,25 +34,34 @@
     }
   });
 
-  recognition = new SpeechRecognition();
+  recognition = new (window as any).SpeechRecognition();
 
   recognition.lang = 'en-US';
   recognition.interimResults = true;
   recognition.continuous = true;
 
   recognition.onresult = (event: any) => {
-    let text = '';
+    let interim = '';
+
     for (let i = event.resultIndex; i < event.results.length; i++) {
-      text += event.results[i][0].transcript;
+      const transcriptPart = event.results[i][0].transcript;
+
+      if (event.results[i].isFinal) {
+        finalTranscript.value += transcriptPart + ' ';
+      } else {
+        interim += transcriptPart;
+      }
     }
-    transcript.value = text;
-    emit('result', text);
+
+    transcript.value = finalTranscript.value + interim;
+
+    emit('update:modelValue', transcript.value);
   };
 
   function startRecording() {
     if (!recognition) return;
-
     transcript.value = '';
+    finalTranscript.value = '';
     recognition.start();
     recording.value = true;
   }

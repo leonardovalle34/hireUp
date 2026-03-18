@@ -1,48 +1,64 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+  import { ref, onMounted } from 'vue';
+  import { useLessonStore } from '@/stores/lesson';
+  import { useRouter } from 'vue-router';
+  import { storeToRefs } from 'pinia';
+  import VoiceRecorder from '@/components/VoiceRecorder/VoiceRecorder.vue';
 
-interface Lesson {
-  id: number
-  title: string
-  date: string
-}
+  const lessonStore = useLessonStore();
+  const router = useRouter();
+  const answer = ref('');
 
-const lessons = ref<Lesson[]>([])
+  const { submitLoading, feedback, lesson, loading } = storeToRefs(lessonStore);
 
-onMounted(() => {
-  lessons.value = [
-    {
-      id: 1,
-      title: 'Present Simple',
-      date: '2026-03-10',
-    },
-    {
-      id: 2,
-      title: 'Past Simple',
-      date: '2026-03-12',
-    },
-  ]
-})
+  const submit = async () => {
+    await lessonStore.submitAnswer(answer.value);
+    answer.value = '';
+  };
+
+  onMounted(async () => {
+    const canStart = await lessonStore.canStartLesson();
+    if (!canStart) {
+      router.push('pricing');
+      return;
+    }
+    await lessonStore.fetchLesson();
+    await lessonStore.startLesson();
+  });
 </script>
 
 <template>
   <div class="lessons">
-    <h1>My Lessons</h1>
+    <h1>Daily Interview Practice</h1>
 
-    <a-list bordered :data-source="lessons">
-      <template #renderItem="{ item }">
-        <a-list-item>
-          <a-list-item-meta :title="item.title" :description="item.date" />
-        </a-list-item>
-      </template>
-    </a-list>
+    <div v-if="loading || submitLoading">Loading lesson...</div>
+
+    <div v-else>
+      <a-card v-if="feedback === null">
+        <h2>{{ lesson?.question }}</h2>
+
+        <VoiceRecorder
+          :modelValue="answer"
+          @update:modelValue="answer = $event"
+        />
+
+        <a-button type="primary" block style="margin-top: 20px" @click="submit">
+          Submit Answer
+        </a-button>
+      </a-card>
+      <a-card v-else>
+        <h2>Feedback</h2>
+        <p>Score: {{ feedback.score }}</p>
+        <p>{{ feedback.feedback }}</p>
+      </a-card>
+    </div>
   </div>
 </template>
 
 <style scoped>
-.lessons {
-  max-width: 800px;
-  margin: auto;
-  padding: 40px;
-}
+  .lessons {
+    max-width: 800px;
+    margin: auto;
+    padding: 40px;
+  }
 </style>
