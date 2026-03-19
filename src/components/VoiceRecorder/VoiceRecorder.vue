@@ -75,11 +75,23 @@
 <template>
   <div class="voice-recorder">
     <a-space direction="vertical" style="width: 100%">
-      <a-button type="primary" v-if="!recording" @click="startRecording">
+      <a-button
+        type="primary"
+        v-if="!recording"
+        @click="startRecording"
+        style="width: 100%"
+      >
         🎤 Start Answer
       </a-button>
 
-      <a-button danger v-if="recording" @click="stopRecording"> Stop </a-button>
+      <a-button
+        danger
+        v-if="recording"
+        @click="stopRecording"
+        style="width: 100%"
+      >
+        Stop
+      </a-button>
 
       <a-card v-if="transcript">
         <p>{{ transcript }}</p>

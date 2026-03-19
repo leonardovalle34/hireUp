@@ -20,6 +20,8 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    font-family: 'Manrope';
+    font-weight: 700;
   }
   .app-background {
     margin: 0;
