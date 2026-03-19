@@ -3,9 +3,12 @@ import router from '@/router'
 import { getCurrentUser, signIn, signUp, signOut, getProfile } from '@/services/auth'
 import { supabase } from '@/lib/supabase'
 
+interface IUser {
+  email: string;  
+}
 export const useAuthStore = defineStore('auth', {
   state: () => ({
-    user: null as any,
+    user: null as IUser | null,
     profile: null as any,
     loading: false,
     error: '',
