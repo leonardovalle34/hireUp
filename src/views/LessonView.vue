@@ -8,14 +8,17 @@
   import SpeakingAvatar from '@/components/SpeakingAvatar/SpeakingAvatar.vue';
   import Loading from '@/components/Loading/Loading.vue';
   import AlertComponent from '@/components/AlertComponent/AlertComponent.vue';
+  import { useAuthStore } from '@/stores/auth';
 
   const lessonStore = useLessonStore();
   const router = useRouter();
   const answer = ref('');
   const noAnswerAlert = ref<string | null>(null);
   const isSpeaking = ref(false);
+  const auth = storeToRefs(useAuthStore());
 
   const { submitLoading, feedback, lesson, loading } = storeToRefs(lessonStore);
+  const { user } = auth;
 
   const submit = async () => {
     if (!answer.value.trim()) {
@@ -30,20 +33,25 @@
   };
 
   const askQuestion = () => {
-    console.log('passei aqui');
     isSpeaking.value = true;
   };
 
   onMounted(async () => {
-    /*const canStart = await lessonStore.canStartLesson();
+    const canStart = await lessonStore.canStartLesson();
     if (!canStart) {
       router.push('pricing');
       return;
-    }*/
-    await lessonStore.fetchLesson();
-    await lessonStore.startLesson();
-    if (lesson.value) {
-      askQuestion();
+    }
+    if (user.value) {
+      await lessonStore.fetchLesson(Number(user.value.id));
+      console.log('lesson', lesson.value);
+      await lessonStore.startLesson();
+      if (lesson.value) {
+        askQuestion();
+      }
+    } else {
+      // Handle the case where user is null, e.g., redirect or show an error
+      router.push('/login');
     }
   });
 </script>
@@ -56,12 +64,13 @@
 
     <div v-else>
       <a-card v-if="feedback === null">
-        <h2>{{ lesson?.question }}</h2>
+        <h2>{{ lesson && lesson.length > 0 ? lesson[0].question : '' }}</h2>
         <SpeakingAvatar
           :isSpeaking="isSpeaking"
-          :question="lesson?.question ?? ''"
+          :question="
+            lesson && lesson.length > 0 ? lesson[0].question ?? '' : ''
+          "
         />
-
         <VoiceRecorder
           :modelValue="answer"
           @update:modelValue="answer = $event"

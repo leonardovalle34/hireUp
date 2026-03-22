@@ -10,13 +10,8 @@ export async function canUserTakeLesson(userId: string) {
   return data
 }
 
-export async function getLesson() {
-  const { data, error } = await supabase
-    .from('lessons')
-    .select('*')
-    .order('created_at', { ascending: true })
-    .limit(1)
-    .single()
+export async function getLesson(userId: number) {
+  const { data, error } = await supabase.rpc('get_random_question', { uid: userId })
 
   if (error) throw error
 

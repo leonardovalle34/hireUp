@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 
 interface IUser {
   email: string;  
+  id: string;
 }
 export const useAuthStore = defineStore('auth', {
   state: () => ({
