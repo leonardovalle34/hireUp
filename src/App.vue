@@ -27,7 +27,7 @@
     margin: 0;
     padding: 0;
     min-height: 100vh;
-    background: linear-gradient(135deg, #034fb9 0%, #2e2992 100%);
+    background: linear-gradient(135deg, #001633 0%, #060042 100%);
     display: flex;
     align-items: center;
     justify-content: center;
