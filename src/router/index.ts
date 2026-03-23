@@ -1,10 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router';
-// Fix for TypeScript: Property 'env' does not exist on type 'ImportMeta'.
-// Vite provides import.meta.env, so declare types if missing.
+
 declare global {
   interface ImportMetaEnv {
     readonly BASE_URL: string;
-    // add other env variables here if needed
   }
   interface ImportMeta {
     readonly env: ImportMetaEnv;
@@ -39,8 +37,8 @@ const router = createRouter({
 router.beforeEach(async (to) => {
   const auth = useAuthStore();
 
-  if(!auth.user) {
-    await auth.fetchUser()
+  if (!auth.user) {
+    await auth.fetchUser();
   }
 
   if (to.meta.requiresAuth && !auth.user) {

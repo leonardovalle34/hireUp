@@ -1,15 +1,20 @@
-import { defineStore } from 'pinia'
-import router from '@/router'
-import { getCurrentUser, signIn, signUp, signOut, getProfile } from '@/services/auth'
-import { supabase } from '@/lib/supabase'
+import { defineStore } from 'pinia';
+import router from '@/router';
+import {
+  getCurrentUser,
+  signIn,
+  signUp,
+  signOut,
+  getProfile,
+  getCurrentUserDashboard,
+} from '@/services/auth';
+import { supabase } from '@/lib/supabase';
+import { IUser } from '@/interface/IUser';
 
-interface IUser {
-  email: string;  
-  id: string;
-}
 export const useAuthStore = defineStore('auth', {
   state: () => ({
-    user: null as IUser | null,
+    user: null as any | null,
+    dashboardUser: null as IUser | null,
     profile: null as any,
     loading: false,
     error: '',
@@ -17,60 +22,61 @@ export const useAuthStore = defineStore('auth', {
 
   actions: {
     async fetchUser() {
-      this.user = await getCurrentUser()
+      this.user = await getCurrentUser();
 
       if (this.user) {
-        this.profile = await getProfile(this.user.id)
+        //this.profile = await getProfile(this.user.id);
+        this.dashboardUser = await getCurrentUserDashboard(this.user.id);
       }
     },
 
     async login(email: string, password: string) {
-      this.loading = true
-      this.error = ''
+      this.loading = true;
+      this.error = '';
 
       try {
-        this.user = await signIn(email, password)
-        this.profile = await getProfile(this.user.id)
+        this.user = await signIn(email, password);
+        this.profile = await getProfile(this.user.id);
       } catch (err: any) {
-        this.error = err.message
+        this.error = err.message;
       }
 
-      this.loading = false
+      this.loading = false;
     },
 
     async register(email: string, password: string) {
-      this.loading = true
-      this.error = ''
+      this.loading = true;
+      this.error = '';
 
       try {
-        this.user = await signUp(email, password)
+        this.user = await signUp(email, password);
       } catch (err: any) {
-        this.error = err.message
+        this.error = err.message;
       }
 
-      this.loading = false
+      this.loading = false;
     },
 
     async logout() {
-      await signOut()
-      this.user = null
-      this.profile = null
-      router.push('/login')
+      await signOut();
+      this.user = null;
+      this.profile = null;
+      router.push('/login');
     },
 
     async loadUser() {
       //TO-DO PUT SERVICE INTO SERVICE FILE
-      this.loading = true
-      const { data } = await supabase.auth.getUser()
-      this.user = data?.user ?? null
-      this.loading = false
+      this.loading = true;
+      const { data } = await supabase.auth.getUser();
+      this.user = data?.user ?? null;
+      this.loading = false;
     },
 
     listenAuth() {
       //TO-DO PUT SERVICE INTO SERVICE FILE
       supabase.auth.onAuthStateChange((_event, session) => {
-        this.user = session?.user ?? null
-      })
+        this.user = session?.user ?? null;
+      });
     },
   },
-})
+});

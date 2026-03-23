@@ -12,86 +12,186 @@
   import { ExclamationCircleOutlined } from '@ant-design/icons-vue';
 
   const auth = useAuthStore();
-  const { user, profile } = storeToRefs(auth);
+  const { user, profile, dashboardUser } = storeToRefs(auth);
   const { isFree } = useUserPlan();
 </script>
 
 <template>
-  <AlertComponent
-    v-if="isFree"
-    :message="'Você está no plano Free. Faça upgrade para liberar todas as lições.'"
-    type="info"
-    :show-icon="true"
-  >
-    <template #icon>
-      <ExclamationCircleOutlined />
-    </template>
-  </AlertComponent>
-  <div class="container">
-    <div class="header">
-      <h1>👋 Olá, {{ profile?.name || user?.email }}</h1>
-      <p class="email">{{ user?.email }}</p>
-    </div>
+  <div class="dashboard-container">
+    <AlertComponent
+      v-if="isFree"
+      :message="'Você está no plano Free. Faça upgrade para liberar todas as lições.'"
+      type="info"
+      :show-icon="true"
+      position="bottom"
+    >
+      <template #icon>
+        <ExclamationCircleOutlined />
+      </template>
+    </AlertComponent>
 
-    <div class="cards">
-      <div class="card">
-        <p class="label">Plano</p>
-        <h2>{{ isFree ? 'Free' : 'Pro' }}</h2>
+    <div class="dashboard-card">
+      <div class="header">
+        <h1>👋 Olá, {{ dashboardUser?.name || dashboardUser?.email }}</h1>
+        <p class="email">{{ dashboardUser?.email }}</p>
+      </div>
+
+      <div class="cards">
+        <div class="card">
+          <p class="label">Plano</p>
+          <h2>{{ dashboardUser?.plan }}</h2>
+        </div>
+
+        <div class="card">
+          <p class="label">Status</p>
+          <h2>Ativo</h2>
+        </div>
+
+        <div class="card">
+          <p class="label">Membro desde</p>
+          <h2>
+            {{
+              new Date(dashboardUser?.created_at || '').toLocaleDateString(
+                'pt-BR',
+              )
+            }}
+          </h2>
+        </div>
+        <div class="card">
+          <p class="label">Treinos realizados hoje</p>
+          <h2>
+            {{ dashboardUser?.lessons_today || 0 }}
+          </h2>
+        </div>
+        <div class="card">
+          <p class="label">Treinos restantes</p>
+          <h2>
+            {{ dashboardUser?.remaining || 0 }}
+          </h2>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-  .container {
-    padding: 16px;
-    max-width: 500px;
-    margin: 40px 0px 0px 0px;
+  .dashboard-container {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .dashboard-card {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow:
+      0 1px 3px rgba(0, 0, 0, 0.1),
+      0 1px 2px rgba(0, 0, 0, 0.06);
+    transition: box-shadow 0.3s ease;
+  }
+
+  .dashboard-card:hover {
+    box-shadow:
+      0 4px 6px rgba(0, 0, 0, 0.07),
+      0 2px 4px rgba(0, 0, 0, 0.06);
   }
 
   .header {
-    margin-bottom: 20px;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #f0f0f0;
   }
 
   .header h1 {
-    font-size: 20px;
-    margin-bottom: 4px;
+    font-size: 24px;
+    margin-bottom: 8px;
+    color: #1a1a1a;
+    font-weight: 600;
   }
 
   .email {
     font-size: 14px;
-    color: #888;
+    color: #8c8c8c;
+    margin: 0;
   }
 
   .cards {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 16px;
   }
 
   .card {
-    background: #f5f5f5;
-    padding: 16px;
+    background: #fafafa;
+    padding: 20px;
     border-radius: 12px;
+    border: 1px solid #f0f0f0;
+    transition: all 0.2s ease;
+  }
+
+  .card:hover {
+    background: #ffffff;
+    border-color: #d9d9d9;
+    transform: translateY(-2px);
   }
 
   .card .label {
-    font-size: 12px;
-    color: #666;
+    font-size: 13px;
+    color: #8c8c8c;
+    margin-bottom: 8px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
   }
 
   .card h2 {
-    margin-top: 4px;
+    margin: 0;
+    font-size: 28px;
+    font-weight: 600;
+    color: #262626;
   }
 
-  /* DESKTOP */
+  /* Tablet */
   @media (min-width: 768px) {
+    .dashboard-container {
+      padding: 24px;
+    }
+
+    .dashboard-card {
+      padding: 32px;
+    }
+
     .cards {
       flex-direction: row;
     }
 
     .card {
       flex: 1;
+    }
+
+    .card h2 {
+      font-size: 32px;
+    }
+  }
+
+  /* Desktop */
+  @media (min-width: 1024px) {
+    .dashboard-container {
+      padding: 32px;
+    }
+
+    .dashboard-card {
+      padding: 40px;
+    }
+
+    .header h1 {
+      font-size: 28px;
+    }
+
+    .card h2 {
+      font-size: 36px;
     }
   }
 </style>

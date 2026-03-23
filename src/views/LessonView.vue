@@ -36,7 +36,14 @@
     isSpeaking.value = true;
   };
 
-  onMounted(async () => {
+  const newQuestion = () => {
+    isSpeaking.value = false;
+    noAnswerAlert.value = null;
+    feedback.value = null;
+    getQuestions();
+  };
+
+  const getQuestions = async () => {
     const canStart = await lessonStore.canStartLesson();
     if (!canStart) {
       router.push('pricing');
@@ -44,15 +51,17 @@
     }
     if (user.value) {
       await lessonStore.fetchLesson(Number(user.value.id));
-      console.log('lesson', lesson.value);
       await lessonStore.startLesson();
       if (lesson.value) {
         askQuestion();
       }
     } else {
-      // Handle the case where user is null, e.g., redirect or show an error
       router.push('/login');
     }
+  };
+
+  onMounted(async () => {
+    await getQuestions();
   });
 </script>
 
@@ -68,7 +77,7 @@
         <SpeakingAvatar
           :isSpeaking="isSpeaking"
           :question="
-            lesson && lesson.length > 0 ? lesson[0].question ?? '' : ''
+            lesson && lesson.length > 0 ? (lesson[0].question ?? '') : ''
           "
         />
         <VoiceRecorder
@@ -84,6 +93,14 @@
         <h2>Feedback</h2>
         <p>Score: {{ feedback.score }}</p>
         <p>{{ feedback.feedback }}</p>
+        <a-button
+          type="primary"
+          block
+          style="margin-top: 20px"
+          @click="newQuestion"
+        >
+          Next Question
+        </a-button>
       </a-card>
     </div>
   </div>

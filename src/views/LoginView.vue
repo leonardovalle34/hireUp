@@ -1,19 +1,19 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useAuthStore } from '@/stores/auth'
-import { useRouter } from 'vue-router'
+  import { ref } from 'vue';
+  import { useAuthStore } from '@/stores/auth';
+  import { useRouter } from 'vue-router';
 
-const email = ref('')
-const password = ref('')
-const auth = useAuthStore()
-const router = useRouter()
+  const email = ref('');
+  const password = ref('');
+  const auth = useAuthStore();
+  const router = useRouter();
 
-async function handleLogin() {
-  await auth.login(email.value, password.value)
-  if (auth.user) router.push('/')
-}
+  async function handleLogin() {
+    await auth.login(email.value, password.value);
+    if (auth.user) router.push('/');
+  }
 
-/*async function handleSignup() {
+  /*async function handleSignup() {
   await auth.signUp(email.value, password.value)
   if (auth.user) router.push('/')
 }*/
@@ -22,6 +22,7 @@ async function handleLogin() {
 <template>
   <div class="login-wrapper">
     <div class="brand">
+      <img src="/noTitleHireUpLogo.png" alt="Logo" width="150px" />
       <h1>HireUp</h1>
       <p>Daily English Challenge for developers</p>
     </div>
@@ -42,13 +43,20 @@ async function handleLogin() {
           <a-input-password v-model:value="password" />
         </a-form-item>
 
-        <a-button type="primary" block :loading="auth.loading" @click="handleLogin">
+        <a-button
+          type="primary"
+          block
+          :loading="auth.loading"
+          @click="handleLogin"
+        >
           Login
         </a-button>
 
         <a-divider>or</a-divider>
 
-        <a-button block :loading="auth.loading" @click="handleSignup"> Create Account </a-button>
+        <a-button block :loading="auth.loading" @click="handleSignup">
+          Create Account
+        </a-button>
 
         <a-alert
           v-if="auth.error"
@@ -63,28 +71,28 @@ async function handleLogin() {
 </template>
 
 <style scoped>
-.login-wrapper {
-  width: 100%;
-  max-width: 400px;
-  text-align: center;
-}
+  .login-wrapper {
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+  }
 
-.brand {
-  color: white;
-  margin-bottom: 30px;
-}
+  .brand {
+    color: white;
+    margin-bottom: 30px;
+  }
 
-.brand h1 {
-  font-size: 36px;
-  margin-bottom: 5px;
-  font-weight: bold;
-}
+  .brand h1 {
+    font-size: 36px;
+    margin-bottom: 5px;
+    font-weight: bold;
+  }
 
-.brand p {
-  opacity: 0.9;
-}
+  .brand p {
+    opacity: 0.9;
+  }
 
-.login-card {
-  border-radius: 12px;
-}
+  .login-card {
+    border-radius: 12px;
+  }
 </style>
