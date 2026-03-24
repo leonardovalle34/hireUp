@@ -1,17 +1,19 @@
 import { supabase } from '@/lib/supabase';
 
-export async function getCurrentUser() {
+export async function getFullUser() {
   const { data } = await supabase.auth.getUser();
-  return data?.user ?? null;
-}
 
-export async function getCurrentUserDashboard(userId: string) {
-  const { data, error } = await supabase.rpc('get_user_dashboard', {
-    uid: userId,
+  const user = data?.user;
+  if (!user) return null;
+
+  const { data: dashboard } = await supabase.rpc('get_user_dashboard', {
+    uid: user.id,
   });
-  if (error) throw error;
 
-  return data;
+  return {
+    user,
+    dashboard,
+  };
 }
 
 export async function signIn(email: string, password: string) {

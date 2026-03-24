@@ -12,7 +12,7 @@
   import { ExclamationCircleOutlined } from '@ant-design/icons-vue';
 
   const auth = useAuthStore();
-  const { user, profile, dashboardUser } = storeToRefs(auth);
+  const { dashboardUser } = storeToRefs(auth);
   const { isFree } = useUserPlan();
 </script>
 

@@ -1,13 +1,6 @@
 import { defineStore } from 'pinia';
 import router from '@/router';
-import {
-  getCurrentUser,
-  signIn,
-  signUp,
-  signOut,
-  getProfile,
-  getCurrentUserDashboard,
-} from '@/services/auth';
+import { signIn, signUp, signOut, getFullUser } from '@/services/auth';
 import { supabase } from '@/lib/supabase';
 import { IUser } from '@/interface/IUser';
 
@@ -22,11 +15,22 @@ export const useAuthStore = defineStore('auth', {
 
   actions: {
     async fetchUser() {
-      this.user = await getCurrentUser();
+      this.loading = true;
+      try {
+        const result = await getFullUser();
 
-      if (this.user) {
-        //this.profile = await getProfile(this.user.id);
-        this.dashboardUser = await getCurrentUserDashboard(this.user.id);
+        if (!result) {
+          this.user = null;
+          this.dashboardUser = null;
+          return;
+        }
+
+        this.user = result.user;
+        this.dashboardUser = result.dashboard;
+      } catch (err: any) {
+        this.error = err.message;
+      } finally {
+        this.loading = false;
       }
     },
 
@@ -35,8 +39,8 @@ export const useAuthStore = defineStore('auth', {
       this.error = '';
 
       try {
-        this.user = await signIn(email, password);
-        this.profile = await getProfile(this.user.id);
+        await signIn(email, password);
+        await this.fetchUser();
       } catch (err: any) {
         this.error = err.message;
       }
@@ -64,18 +68,22 @@ export const useAuthStore = defineStore('auth', {
       router.push('/login');
     },
 
-    async loadUser() {
+    /*async loadUser() {
       //TO-DO PUT SERVICE INTO SERVICE FILE
       this.loading = true;
       const { data } = await supabase.auth.getUser();
       this.user = data?.user ?? null;
       this.loading = false;
-    },
+    },*/
 
     listenAuth() {
-      //TO-DO PUT SERVICE INTO SERVICE FILE
       supabase.auth.onAuthStateChange((_event, session) => {
         this.user = session?.user ?? null;
+
+        if (!session?.user) {
+          this.dashboardUser = null;
+          this.profile = null;
+        }
       });
     },
   },
