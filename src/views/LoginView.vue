@@ -2,11 +2,13 @@
   import { ref } from 'vue';
   import { useAuthStore } from '@/stores/auth';
   import { useRouter } from 'vue-router';
+  import { storeToRefs } from 'pinia';
 
   const email = ref('');
   const password = ref('');
   const auth = useAuthStore();
   const router = useRouter();
+  const { loading, error } = storeToRefs(auth);
 
   async function handleLogin() {
     await auth.login(email.value, password.value);
@@ -43,24 +45,18 @@
           <a-input-password v-model:value="password" />
         </a-form-item>
 
-        <a-button
-          type="primary"
-          block
-          :loading="auth.loading"
-          @click="handleLogin"
-        >
+        <a-button type="primary" block :loading="loading" @click="handleLogin">
           Login
         </a-button>
 
         <a-divider>or</a-divider>
-
-        <a-button block :loading="auth.loading" @click="handleSignup">
+        <a-button block :loading="loading" @click="handleSignup">
           Create Account
         </a-button>
 
         <a-alert
-          v-if="auth.error"
-          :message="auth.error"
+          v-if="error"
+          :message="error"
           type="error"
           show-icon
           style="margin-top: 15px"

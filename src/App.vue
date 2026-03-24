@@ -4,8 +4,8 @@
 
   const auth = useAuthStore();
 
-  onMounted(() => {
-    auth.loadUser();
+  onMounted(async () => {
+    //await auth.fetchUser();
     auth.listenAuth();
   });
 </script>
