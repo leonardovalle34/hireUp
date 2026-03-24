@@ -5,6 +5,7 @@
 </script>
 
 <script setup lang="ts">
+  import { onMounted } from 'vue';
   import { useUserPlan } from '@/composables/useUserPlan';
   import { useAuthStore } from '@/stores/auth';
   import { storeToRefs } from 'pinia';
@@ -14,6 +15,10 @@
   const auth = useAuthStore();
   const { dashboardUser } = storeToRefs(auth);
   const { isFree } = useUserPlan();
+
+  onMounted(() => {
+    auth.fetchUser();
+  });
 </script>
 
 <template>
