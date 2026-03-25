@@ -3,6 +3,7 @@
   import { useAuthStore } from '@/stores/auth';
   import { useRouter } from 'vue-router';
   import { storeToRefs } from 'pinia';
+  import { signInWithGoogle } from '@/services/auth';
 
   const email = ref('');
   const password = ref('');
@@ -15,10 +16,17 @@
     if (auth.user) router.push('/');
   }
 
-  /*async function handleSignup() {
-  await auth.signUp(email.value, password.value)
-  if (auth.user) router.push('/')
-}*/
+  const handleGoogleLogin = async () => {
+    try {
+      await signInWithGoogle();
+    } catch (err: any) {
+      error.value = err.message;
+    }
+  };
+
+  async function handleSignup() {
+    router.push('/signup');
+  }
 </script>
 
 <template>
@@ -51,7 +59,18 @@
 
         <a-divider>or</a-divider>
         <a-button block :loading="loading" @click="handleSignup">
-          Create Account
+          Criar uma conta
+        </a-button>
+        <a-divider>ou</a-divider>
+
+        <a-button size="large" block @click="handleGoogleLogin">
+          <template #icon>
+            <img
+              src="https://www.svgrepo.com/show/475656/google-color.svg"
+              style="width: 18px; margin-right: 20px"
+            />
+          </template>
+          Continue com Google
         </a-button>
 
         <a-alert

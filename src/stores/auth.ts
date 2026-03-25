@@ -48,12 +48,12 @@ export const useAuthStore = defineStore('auth', {
       this.loading = false;
     },
 
-    async register(email: string, password: string) {
+    async register(email: string, password: string, name: string) {
       this.loading = true;
       this.error = '';
 
       try {
-        this.user = await signUp(email, password);
+        this.user = await signUp(email, password, name);
       } catch (err: any) {
         this.error = err.message;
       }
