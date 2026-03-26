@@ -5,6 +5,14 @@
 </script>
 <script lang="ts" setup>
   import { plans } from '@/Plans/Plans';
+  import { useAuthStore } from '@/stores/auth';
+  import { checkout } from '@/services/checkout';
+
+  const auth = useAuthStore();
+
+  const handleUpgrade = async () => {
+    await checkout(auth);
+  };
 </script>
 <template>
   <div class="pricing">
@@ -21,7 +29,9 @@
             </li>
           </ul>
 
-          <a-button type="primary" block> Choose Plan </a-button>
+          <a-button type="primary" block @click="handleUpgrade">
+            Choose Plan
+          </a-button>
         </a-card>
       </a-col>
     </a-row>
