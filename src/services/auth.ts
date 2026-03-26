@@ -26,13 +26,19 @@ export async function signIn(email: string, password: string) {
   return data.user;
 }
 
-export async function signUp(email: string, password: string) {
+export async function signUp(email: string, password: string, name: string) {
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
+    options: {
+      data: {
+        name,
+      },
+    },
   });
 
   if (error) throw error;
+
   return data.user;
 }
 
@@ -50,4 +56,15 @@ export async function getProfile(userId: string) {
 
   if (error) throw error;
   return data;
+}
+
+export async function signInWithGoogle() {
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: 'http://localhost:5173', // importante
+    },
+  });
+
+  if (error) throw error;
 }

@@ -5,7 +5,7 @@
 </script>
 
 <script setup lang="ts">
-  import { useUserPlan } from '@/composables/useUserPlan';
+  import { onMounted } from 'vue';
   import { useAuthStore } from '@/stores/auth';
   import { storeToRefs } from 'pinia';
   import AlertComponent from '@/components/AlertComponent/AlertComponent.vue';
@@ -13,13 +13,16 @@
 
   const auth = useAuthStore();
   const { dashboardUser } = storeToRefs(auth);
-  const { isFree } = useUserPlan();
+
+  onMounted(() => {
+    auth.fetchUser();
+  });
 </script>
 
 <template>
   <div class="dashboard-container">
     <AlertComponent
-      v-if="isFree"
+      v-if="dashboardUser?.plan === 'free'"
       :message="'Você está no plano Free. Faça upgrade para liberar todas as lições.'"
       type="info"
       :show-icon="true"
@@ -39,7 +42,7 @@
       <div class="cards">
         <div class="card">
           <p class="label">Plano</p>
-          <h2>{{ dashboardUser?.plan }}</h2>
+          <h2>{{ dashboardUser?.plan.toUpperCase() }}</h2>
         </div>
 
         <div class="card">
@@ -66,7 +69,7 @@
         <div class="card">
           <p class="label">Treinos restantes</p>
           <h2>
-            {{ dashboardUser?.remaining || 0 }}
+            {{ dashboardUser?.remaining || 'Ilimitado' }}
           </h2>
         </div>
       </div>
