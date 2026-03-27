@@ -20,16 +20,24 @@
 
     <a-row :gutter="16" class="pricing-box">
       <a-col v-for="plan in plans" :key="plan.name">
-        <a-card :title="plan.name">
-          <h2>R$ {{ plan.price }}</h2>
+        <a-card>
+          <template #title>
+            <h2>{{ plan.name }}</h2>
+          </template>
+          <h2>US$ {{ plan.price }}</h2>
 
-          <ul>
-            <li v-for="f in plan.features" :key="f">
+          <ul class="features">
+            <li v-for="f in plan.features" :key="f" class="list">
               {{ f }}
             </li>
           </ul>
 
-          <a-button type="primary" block @click="handleUpgrade">
+          <a-button
+            type="primary"
+            block
+            @click="handleUpgrade"
+            class="checkout-btn"
+          >
             Choose Plan
           </a-button>
         </a-card>
@@ -43,6 +51,7 @@
     max-width: 1000px;
     margin: auto;
     padding: 40px;
+    gap: 10px;
   }
 
   .pricing-box {
@@ -54,5 +63,12 @@
   h1 {
     text-align: center;
     margin-bottom: 40px;
+  }
+  .checkout-btn {
+    margin-top: 30px;
+  }
+
+  .list {
+    margin: 10px 0;
   }
 </style>
