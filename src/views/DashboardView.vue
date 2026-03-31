@@ -69,7 +69,7 @@
         <div class="card">
           <p class="label">Treinos restantes</p>
           <h2>
-            {{ dashboardUser?.remaining || 'Ilimitado' }}
+            {{ dashboardUser?.remaining }}
           </h2>
         </div>
       </div>

@@ -50,7 +50,11 @@
       return;
     }
     if (user.value) {
-      await lessonStore.fetchLesson(Number(user.value.id));
+      await lessonStore.fetchLesson({
+        userId: Number(user.value.id),
+        focus: 'frontend',
+        level: 'junior',
+      });
       await lessonStore.startLesson();
       if (lesson.value) {
         askQuestion();

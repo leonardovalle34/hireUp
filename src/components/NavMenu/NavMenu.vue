@@ -39,7 +39,7 @@
 
       <a-menu-item key="pricing" @click="router.push('/pricing')">
         <DollarOutlined />
-        <span v-if="!isMobile">Preço</span>
+        <span v-if="!isMobile">Assinatura</span>
       </a-menu-item>
 
       <a-menu-divider />
