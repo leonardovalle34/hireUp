@@ -9,6 +9,7 @@
   import { useAuthStore } from '@/stores/auth';
   import { storeToRefs } from 'pinia';
   import AlertComponent from '@/components/AlertComponent/AlertComponent.vue';
+  import BaseCard from '@/components/UI/BaseCard.vue';
   import { ExclamationCircleOutlined } from '@ant-design/icons-vue';
 
   const auth = useAuthStore();
@@ -31,11 +32,20 @@
     auth.fetchUser();
     const storedSubject = localStorage.getItem('subject');
     const storedLevel = localStorage.getItem('level');
+
+    if (dashboardUser.value?.plan === 'free') {
+      showAlert.value = true;
+      setTimeout(() => {
+        showAlert.value = false;
+      }, 10000);
+    }
+
     if (storedSubject) {
       typeOfQuestion.value = storedSubject;
     } else {
       localStorage.setItem('subject', typeOfQuestion.value);
     }
+
     if (storedLevel) {
       level.value = storedLevel;
     } else {
@@ -65,12 +75,12 @@
       </div>
 
       <div class="cards">
-        <div class="card">
+        <BaseCard>
           <p class="label">Plano</p>
           <h2>{{ dashboardUser?.plan.toUpperCase() }}</h2>
-        </div>
+        </BaseCard>
 
-        <div class="card">
+        <BaseCard>
           <p class="label">Membro desde</p>
           <h2>
             {{
@@ -79,14 +89,14 @@
               )
             }}
           </h2>
-        </div>
-        <div class="card">
+        </BaseCard>
+
+        <BaseCard>
           <p class="label">Treinos realizados hoje</p>
-          <h2>
-            {{ dashboardUser?.lessons_today || 0 }}
-          </h2>
-        </div>
-        <div class="card">
+          <h2>{{ dashboardUser?.lessons_today || 0 }}</h2>
+        </BaseCard>
+
+        <BaseCard>
           <p class="label">Treinos restantes</p>
           <h2>
             {{
@@ -95,8 +105,9 @@
                 : dashboardUser?.remaining
             }}
           </h2>
-        </div>
-        <div class="card">
+        </BaseCard>
+
+        <BaseCard>
           <p class="label">Tech</p>
           <a-select
             v-model:value="typeOfQuestion"
@@ -119,9 +130,9 @@
             <a-select-option value="ruby">Ruby</a-select-option>
             <a-select-option value="frontend">Frontend</a-select-option>
           </a-select>
-        </div>
+        </BaseCard>
 
-        <div class="card">
+        <BaseCard>
           <p class="label">Senioridade</p>
           <a-select
             v-model:value="level"
@@ -133,7 +144,7 @@
             <a-select-option value="pleno">Pleno</a-select-option>
             <a-select-option value="senior">Sênior</a-select-option>
           </a-select>
-        </div>
+        </BaseCard>
       </div>
     </div>
   </div>
@@ -154,13 +165,6 @@
     box-shadow:
       0 1px 3px rgba(0, 0, 0, 0.1),
       0 1px 2px rgba(0, 0, 0, 0.06);
-    transition: box-shadow 0.3s ease;
-  }
-
-  .dashboard-card:hover {
-    box-shadow:
-      0 4px 6px rgba(0, 0, 0, 0.07),
-      0 2px 4px rgba(0, 0, 0, 0.06);
   }
 
   .header {
@@ -172,101 +176,43 @@
   .header h1 {
     font-size: 24px;
     margin-bottom: 8px;
-    color: #1a1a1a;
-    font-weight: 600;
   }
 
   .email {
     font-size: 14px;
     color: #8c8c8c;
-    margin: 0;
   }
 
+  /* layout */
   .cards {
     display: flex;
     flex-direction: column;
     gap: 16px;
   }
 
-  .card {
-    background: #fafafa;
-    padding: 20px;
-    border-radius: 12px;
-    border: 1px solid #f0f0f0;
-    transition: all 0.2s ease;
-  }
-
-  .card:hover {
-    background: #ffffff;
-    border-color: #d9d9d9;
-    transform: translateY(-2px);
-  }
-
-  .card .label {
+  .label {
     font-size: 13px;
     color: #8c8c8c;
     margin-bottom: 8px;
     font-weight: 500;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
   }
 
-  .card h2 {
-    margin: 0;
-    font-size: 28px;
-    font-weight: 600;
-    color: #262626;
-  }
-
-  .card-dropdown {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .select {
-    width: 100%;
-  }
-
-  /* Tablet */
+  /* responsive */
   @media (min-width: 768px) {
-    .dashboard-container {
-      padding: 24px;
-    }
-
-    .dashboard-card {
-      padding: 32px;
-    }
-
     .cards {
       flex-direction: row;
+      flex-wrap: wrap;
     }
 
-    .card {
-      flex: 1;
-    }
-
-    .card h2 {
-      font-size: 32px;
+    .cards > * {
+      flex: 1 1 calc(50% - 8px);
     }
   }
 
-  /* Desktop */
   @media (min-width: 1024px) {
-    .dashboard-container {
-      padding: 32px;
-    }
-
-    .dashboard-card {
-      padding: 10px;
-    }
-
-    .header h1 {
-      font-size: 28px;
-    }
-
-    .card h2 {
-      font-size: 36px;
+    .cards > * {
+      flex: 1 1 calc(33.33% - 10px);
     }
   }
 </style>
