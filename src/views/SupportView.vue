@@ -64,50 +64,61 @@
 
 <template>
   <div class="support-container">
-    <!-- Hero Section -->
-    <div class="hero-section">
-      <div class="hero-content">
-        <CustomerServiceOutlined class="hero-icon" />
-        <h1 class="hero-title">Suporte Técnico</h1>
-        <p class="hero-subtitle">
-          Estamos aqui para ajudar! Escolha a melhor forma de entrar em contato
-          conosco
-        </p>
+    <div class="support-card">
+      <div class="header">
+        <CustomerServiceOutlined class="header-icon" />
+        <h1>Suporte Técnico</h1>
+        <p class="subtitle">Estamos aqui para ajudar!</p>
       </div>
-    </div>
 
-    <!-- Contact Options -->
-    <div class="contact-options">
-      <div class="container">
-        <div class="options-grid">
-          <!-- WhatsApp Card -->
-          <div class="option-card whatsapp-card" @click="openWhatsApp">
-            <WhatsAppOutlined class="option-icon" />
-            <h3 class="option-title">WhatsApp</h3>
-            <p class="option-description">
-              Resposta rápida e direta para dúvidas, reclamações ou sugestões
-            </p>
-            <div class="option-contact">(47) 99753-7883</div>
-            <a-button type="primary" class="option-button">
-              <WhatsAppOutlined /> Falar Agora
-            </a-button>
-          </div>
+      <div class="cards">
+        <!-- WhatsApp Card -->
+        <div class="card whatsapp-card" @click="openWhatsApp">
+          <WhatsAppOutlined class="card-icon" />
+          <h3>WhatsApp</h3>
+          <p>Resposta rápida para dúvidas, reclamações ou sugestões</p>
+          <div class="contact">(47) 99753-7883</div>
+          <a-button type="primary" class="btn-whatsapp">
+            <WhatsAppOutlined /> Falar Agora
+          </a-button>
+        </div>
+
+        <!-- Horário Card -->
+        <div class="card">
+          <ClockCircleOutlined class="card-icon" />
+          <h3>Horário de Atendimento</h3>
+          <p>Segunda a Sexta: 9h às 18h</p>
+          <p>Sábado: 9h às 13h</p>
+          <p>Domingo: Fechado</p>
+        </div>
+
+        <!-- Atendimento Card -->
+        <div class="card">
+          <SafetyOutlined class="card-icon" />
+          <h3>Atendimento Seguro</h3>
+          <p>Seus dados são protegidos</p>
+          <p>Resposta em até 24h úteis</p>
+          <p>Suporte prioritário para assinantes</p>
+        </div>
+
+        <!-- Reportar Bug Card -->
+        <div class="card">
+          <BugOutlined class="card-icon" />
+          <h3>Reportar Bug</h3>
+          <p>Encontrou um problema?</p>
+          <p>Reporte pelo WhatsApp</p>
+          <p>Inclua prints e detalhes</p>
         </div>
       </div>
-    </div>
 
-    <!-- FAQ Section -->
-    <div class="faq-section">
-      <div class="container">
-        <h2 class="section-title">Perguntas Frequentes</h2>
-        <p class="section-subtitle">
-          Tire suas dúvidas rapidamente com as perguntas mais comuns
-        </p>
+      <!-- FAQ Section -->
+      <div class="faq-section">
+        <h2 class="faq-title">Perguntas Frequentes</h2>
 
         <div class="faq-list">
           <div v-for="(faq, index) in faqs" :key="index" class="faq-item">
             <div class="faq-question" @click="toggleFaq(index)">
-              <div style="display: flex; align-items: center; gap: 10px">
+              <div class="faq-question-left">
                 <QuestionCircleOutlined class="faq-icon" />
                 <span>{{ faq.question }}</span>
               </div>
@@ -123,277 +134,269 @@
         </div>
       </div>
     </div>
-
-    <!-- Info Section -->
-    <div class="info-section">
-      <div class="container">
-        <div class="info-grid">
-          <div class="info-card">
-            <ClockCircleOutlined class="info-icon" />
-            <h3>Horário de Atendimento</h3>
-            <p>Segunda a Sexta: 9h às 18h</p>
-            <p>Sábado: 9h às 13h</p>
-            <p>Domingo: Fechado</p>
-          </div>
-
-          <div class="info-card">
-            <SafetyOutlined class="info-icon" />
-            <h3>Atendimento Seguro</h3>
-            <p>Seus dados são protegidos</p>
-            <p>Resposta em até 24h úteis</p>
-            <p>Suporte prioritário para assinantes</p>
-          </div>
-
-          <div class="info-card">
-            <BugOutlined class="info-icon" />
-            <h3>Reportar Bug</h3>
-            <p>Encontrou um problema?</p>
-            <p>Reporte pelo WhatsApp</p>
-            <p>Inclua prints e detalhes</p>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
 <style scoped>
   .support-container {
-    min-height: 100vh;
-    background: #f5f5f5;
-  }
-
-  .container {
+    padding: 40px;
     max-width: 1200px;
     margin: 0 auto;
-    padding: 0 24px;
+    width: 100%;
   }
 
-  /* Hero Section */
-  .hero-section {
-    background: linear-gradient(135deg, #001633 0%, #060042 100%);
-    padding: 60px 24px;
-    text-align: center;
-    color: white;
-  }
-
-  .hero-icon {
-    font-size: 64px;
-    margin-bottom: 24px;
-    animation: pulse 2s ease-in-out infinite;
-  }
-
-  .hero-title {
-    font-size: 48px;
-    font-weight: bold;
-    margin-bottom: 16px;
-  }
-
-  .hero-subtitle {
-    font-size: 18px;
-    max-width: 600px;
-    margin: 0 auto;
-    opacity: 0.95;
-  }
-
-  /* Contact Options */
-  .contact-options {
-    padding: 60px 0;
+  .support-card {
     background: white;
-  }
-
-  .options-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 32px;
-  }
-
-  .option-card {
-    text-align: center;
-    padding: 40px 24px;
     border-radius: 16px;
-    background: white;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    transition:
-      transform 0.3s,
-      box-shadow 0.3s;
+    padding: 24px;
+    box-shadow:
+      0 1px 3px rgba(0, 0, 0, 0.1),
+      0 1px 2px rgba(0, 0, 0, 0.06);
+    transition: box-shadow 0.3s ease;
+  }
+
+  .support-card:hover {
+    box-shadow:
+      0 4px 6px rgba(0, 0, 0, 0.07),
+      0 2px 4px rgba(0, 0, 0, 0.06);
+  }
+
+  .header {
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #f0f0f0;
+    text-align: center;
+  }
+
+  .header-icon {
+    font-size: 48px;
+    color: #001633;
+    margin-bottom: 12px;
+  }
+
+  .header h1 {
+    font-size: 24px;
+    margin-bottom: 8px;
+    color: #1a1a1a;
+    font-weight: 600;
+  }
+
+  .subtitle {
+    font-size: 14px;
+    color: #8c8c8c;
+    margin: 0;
+  }
+
+  .cards {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  .card {
+    background: #fafafa;
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid #f0f0f0;
+    transition: all 0.2s ease;
+    text-align: center;
     cursor: pointer;
   }
 
-  .option-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  .card:hover {
+    background: #ffffff;
+    border-color: #d9d9d9;
+    transform: translateY(-2px);
   }
 
   .whatsapp-card {
     border-top: 4px solid #25d366;
   }
 
-  /* FAQ Section */
-  .faq-section {
-    padding: 60px 0;
-    background: #f5f5f5;
-  }
-
-  .section-title {
+  .card-icon {
     font-size: 36px;
-    font-weight: bold;
-    text-align: center;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
     color: #001633;
   }
 
-  .section-subtitle {
+  .whatsapp-card .card-icon {
+    color: #25d366;
+  }
+
+  .card h3 {
     font-size: 18px;
-    text-align: center;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #262626;
+  }
+
+  .card p {
+    font-size: 14px;
     color: #4a5568;
-    margin-bottom: 48px;
+    margin-bottom: 8px;
+  }
+
+  .contact {
+    font-size: 14px;
+    color: #001633;
+    font-weight: 500;
+    margin: 12px 0;
+  }
+
+  .btn-whatsapp {
+    margin-top: 8px;
+    background-color: #25d366;
+    border-color: #25d366;
+  }
+
+  .btn-whatsapp:hover {
+    background-color: #128c7e;
+    border-color: #128c7e;
+  }
+
+  /* FAQ Section */
+  .faq-section {
+    margin-top: 16px;
+  }
+
+  .faq-title {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: #262626;
+    text-align: center;
   }
 
   .faq-list {
-    max-width: 800px;
-    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
   }
 
   .faq-item {
-    display: flex;
-    flex-direction: column;
-    margin-bottom: 16px;
-    border: 1px solid #e2e8f0;
+    background: #fafafa;
+    border: 1px solid #f0f0f0;
     border-radius: 12px;
     overflow: hidden;
-    background: white;
   }
 
   .faq-question {
-    display: flex !important;
-    flex-direction: row !important;
-    justify-content: space-between !important;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
     cursor: pointer;
-    gap: 12px;
-    color: #2d3748;
+    transition: background 0.2s;
   }
 
   .faq-question:hover {
-    background: #f7fafc;
+    background: #ffffff;
+  }
+
+  .faq-question-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
   }
 
   .faq-icon {
     color: #001633;
-    font-size: 20px;
-    max-width: 30px;
+    font-size: 16px;
   }
 
-  .faq-question span:first-of-type {
-    flex: 1;
+  .faq-question-left span {
+    font-size: 14px;
+    font-weight: 500;
+    color: #2d3748;
   }
 
   .faq-toggle {
-    font-size: 24px;
+    font-size: 20px;
     font-weight: bold;
     color: #001633;
   }
 
   .faq-answer {
-    padding: 20px 24px;
-    background: #f7fafc;
+    padding: 16px;
+    background: #ffffff;
+    border-top: 1px solid #f0f0f0;
     display: flex;
     gap: 12px;
-    border-top: 1px solid #e2e8f0;
   }
 
   .answer-icon {
     color: #001633;
-    font-size: 18px;
+    font-size: 14px;
     margin-top: 2px;
   }
 
   .faq-answer p {
     margin: 0;
+    font-size: 13px;
     color: #4a5568;
-    line-height: 1.6;
+    line-height: 1.5;
     flex: 1;
   }
 
-  .info-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 32px;
-  }
-
-  .info-card {
-    text-align: center;
-    padding: 32px;
-    background: #f7fafc;
-    border-radius: 16px;
-    transition: transform 0.3s;
-    border: 1px solid #e2e8f0;
-  }
-
-  .info-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  }
-
-  .info-icon {
-    font-size: 48px;
-    color: #001633;
-    margin-bottom: 16px;
-  }
-
-  .info-card h3 {
-    font-size: 20px;
-    font-weight: bold;
-    margin-bottom: 16px;
-    color: #2d3748;
-  }
-
-  .info-card p {
-    color: #4a5568;
-    margin-bottom: 8px;
-  }
-
-  /* Animations */
-  @keyframes pulse {
-    0%,
-    100% {
-      transform: scale(1);
-    }
-    50% {
-      transform: scale(1.05);
-    }
-  }
-
-  /* Responsive */
-  @media (max-width: 768px) {
-    .hero-title {
-      font-size: 32px;
+  /* Tablet */
+  @media (min-width: 768px) {
+    .support-container {
+      padding: 24px;
     }
 
-    .hero-subtitle {
-      font-size: 16px;
+    .support-card {
+      padding: 32px;
     }
 
-    .section-title {
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+
+    .header h1 {
       font-size: 28px;
     }
 
-    .options-grid {
-      grid-template-columns: 1fr;
+    .header-icon {
+      font-size: 56px;
     }
 
-    .faq-question {
+    .faq-title {
+      font-size: 22px;
+    }
+  }
+
+  /* Desktop */
+  @media (min-width: 1024px) {
+    .support-container {
+      padding: 32px;
+    }
+
+    .cards {
+      grid-template-columns: repeat(4, 1fr);
+    }
+
+    .card {
+      padding: 24px;
+    }
+
+    .card-icon {
+      font-size: 42px;
+    }
+
+    .card h3 {
+      font-size: 20px;
+    }
+
+    .faq-question-left span {
+      font-size: 16px;
+    }
+
+    .faq-answer p {
       font-size: 14px;
-      padding: 16px;
-    }
-
-    .faq-answer {
-      font-size: 14px;
-      padding: 16px;
-    }
-
-    .info-grid {
-      grid-template-columns: 1fr;
     }
   }
 </style>

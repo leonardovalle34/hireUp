@@ -15,6 +15,7 @@
   const { dashboardUser } = storeToRefs(auth);
   const typeOfQuestion = ref('behavioral');
   const level = ref('junior');
+  const showAlert = ref(false);
 
   const onSubjectChange = (value: string) => {
     typeOfQuestion.value = value;
@@ -46,7 +47,7 @@
 <template>
   <div class="dashboard-container">
     <AlertComponent
-      v-if="dashboardUser?.plan === 'free'"
+      v-if="showAlert"
       :message="'Você está no plano Free. Faça upgrade para liberar todas as lições.'"
       type="info"
       :show-icon="true"
@@ -67,11 +68,6 @@
         <div class="card">
           <p class="label">Plano</p>
           <h2>{{ dashboardUser?.plan.toUpperCase() }}</h2>
-        </div>
-
-        <div class="card">
-          <p class="label">Status</p>
-          <h2>Ativo</h2>
         </div>
 
         <div class="card">
@@ -145,7 +141,7 @@
 
 <style scoped>
   .dashboard-container {
-    padding: 20px;
+    padding: 40px;
     max-width: 1200px;
     margin: 0 auto;
     width: 100%;

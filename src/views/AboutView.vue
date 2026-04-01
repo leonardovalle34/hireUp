@@ -5,16 +5,14 @@
 </script>
 
 <script lang="ts" setup>
-  import { ref, onMounted } from 'vue';
+  import { ref } from 'vue';
   import {
     TeamOutlined,
     ThunderboltOutlined,
     GlobalOutlined,
     HeartOutlined,
     RocketOutlined,
-    TrophyOutlined,
     CheckCircleOutlined,
-    MessageOutlined,
     CodeOutlined,
     TranslationOutlined,
   } from '@ant-design/icons-vue';
@@ -46,67 +44,48 @@
         'Acreditamos no poder da comunidade para compartilhar conhecimento e crescer juntos.',
     },
   ]);
-
-  const team = ref([
-    {
-      name: 'Equipe de Desenvolvimento',
-      role: 'Desenvolvedores Full Stack',
-      description: 'Profissionais apaixonados por tecnologia e educação',
-    },
-  ]);
 </script>
 
 <template>
   <div class="about-container">
-    <!-- Hero Section -->
-    <div class="hero-section">
-      <div class="hero-content">
-        <h1 class="hero-title">
-          <RocketOutlined class="hero-icon" />
-          Preparando Devs para o Sucesso
-        </h1>
-        <p class="hero-subtitle">
+    <div class="about-card">
+      <div class="header">
+        <RocketOutlined class="header-icon" />
+        <h1>Preparando Devs para o Sucesso</h1>
+        <p class="subtitle">
           Somos uma plataforma dedicada a transformar desenvolvedores em
-          profissionais prontos para enfrentar qualquer entrevista técnica, em
-          qualquer idioma.
+          profissionais prontos para enfrentar qualquer entrevista técnica.
         </p>
       </div>
-    </div>
 
-    <!-- Mission Section -->
-    <div class="mission-section">
-      <div class="container">
-        <div class="mission-card">
-          <h2 class="section-title">Nossa Missão</h2>
-          <p class="mission-text">
-            Somos programadores que entendem os desafios do mercado de
-            tecnologia. Nossa missão é ajudar desenvolvedores a se prepararem
-            para entrevistas técnicas, oferecendo um ambiente de treinamento
-            realista e feedback especializado. Acreditamos que um bom
-            desenvolvedor merece estar pronto para aproveitar as melhores
-            oportunidades, independente do idioma.
-          </p>
-          <div class="mission-highlights">
-            <div class="highlight">
-              <CheckCircleOutlined class="highlight-icon" />
-              <span>Simulações Reais de Entrevistas</span>
-            </div>
-            <div class="highlight">
-              <CheckCircleOutlined class="highlight-icon" />
-              <span>Feedback Imediato e Detalhado</span>
-            </div>
-            <div class="highlight">
-              <CheckCircleOutlined class="highlight-icon" />
-              <span>Preparação em Inglês e Português</span>
-            </div>
+      <!-- Mission Section -->
+      <div class="mission-section">
+        <h2 class="section-title">Nossa Missão</h2>
+        <p class="mission-text">
+          Somos programadores que entendem os desafios do mercado de tecnologia.
+          Nossa missão é ajudar desenvolvedores a se prepararem para entrevistas
+          técnicas, oferecendo um ambiente de treinamento realista e feedback
+          especializado. Acreditamos que um bom desenvolvedor merece estar
+          pronto para aproveitar as melhores oportunidades.
+        </p>
+        <div class="mission-highlights">
+          <div class="highlight">
+            <CheckCircleOutlined />
+            <span>Simulações Reais de Entrevistas</span>
+          </div>
+          <div class="highlight">
+            <CheckCircleOutlined />
+            <span>Feedback Imediato e Detalhado</span>
+          </div>
+          <div class="highlight">
+            <CheckCircleOutlined />
+            <span>Preparação em Inglês e Português</span>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Stats Section -->
-    <div class="stats-section">
-      <div class="container">
+      <!-- Stats Section -->
+      <div class="stats-section">
         <div class="stats-grid">
           <div v-for="stat in stats" :key="stat.label" class="stat-card">
             <div class="stat-number">{{ stat.number }}</div>
@@ -114,85 +93,68 @@
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Values Section -->
-    <div class="values-section">
-      <div class="container">
+      <!-- Values Section -->
+      <div class="values-section">
         <h2 class="section-title">Nossos Valores</h2>
         <div class="values-grid">
           <div v-for="value in values" :key="value.title" class="value-card">
             <component :is="value.icon" class="value-icon" />
-            <h3 class="value-title">{{ value.title }}</h3>
-            <p class="value-description">{{ value.description }}</p>
+            <h3>{{ value.title }}</h3>
+            <p>{{ value.description }}</p>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Language Section -->
-    <div class="language-section">
-      <div class="container">
-        <div class="language-content">
-          <GlobalOutlined class="language-icon" />
-          <h2 class="section-title">Aprenda Inglês na Prática</h2>
-          <p class="language-text">
-            Sabemos que o inglês é essencial para o crescimento na carreira de
-            tecnologia. Por isso, nossas simulações incluem perguntas em inglês,
-            ajudando você a desenvolver vocabulário técnico e confiança para
-            entrevistas internacionais.
-          </p>
-          <div class="language-features">
-            <div class="feature">
-              <ThunderboltOutlined />
-              <span>Perguntas técnicas em inglês</span>
-            </div>
-            <div class="feature">
-              <ThunderboltOutlined />
-              <span>Feedback sobre seu vocabulário técnico</span>
-            </div>
-            <div class="feature">
-              <ThunderboltOutlined />
-              <span>Prática de pronúncia e estruturação de respostas</span>
-            </div>
+      <!-- Language Section -->
+      <div class="language-section">
+        <GlobalOutlined class="language-icon" />
+        <h2 class="section-title">Aprenda Inglês na Prática</h2>
+        <p class="language-text">
+          Sabemos que o inglês é essencial para o crescimento na carreira de
+          tecnologia. Por isso, nossas simulações incluem perguntas em inglês,
+          ajudando você a desenvolver vocabulário técnico e confiança para
+          entrevistas internacionais.
+        </p>
+        <div class="language-features">
+          <div class="feature">
+            <ThunderboltOutlined />
+            <span>Perguntas técnicas em inglês</span>
+          </div>
+          <div class="feature">
+            <ThunderboltOutlined />
+            <span>Feedback sobre seu vocabulário técnico</span>
+          </div>
+          <div class="feature">
+            <ThunderboltOutlined />
+            <span>Prática de pronúncia e estruturação de respostas</span>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Team Section -->
-    <div class="team-section">
-      <div class="container">
+      <!-- Team Section -->
+      <div class="team-section">
         <h2 class="section-title">Quem Faz Acontecer</h2>
-        <div class="team-grid">
-          <div v-for="member in team" :key="member.name" class="team-card">
-            <TeamOutlined class="team-icon" />
-            <h3 class="team-name">{{ member.name }}</h3>
-            <p class="team-role">{{ member.role }}</p>
-            <p class="team-description">{{ member.description }}</p>
-          </div>
+        <div class="team-card">
+          <TeamOutlined class="team-icon" />
+          <h3>Equipe de Desenvolvimento</h3>
+          <p class="team-role">Desenvolvedores Full Stack</p>
+          <p class="team-description">
+            Profissionais apaixonados por tecnologia e educação
+          </p>
         </div>
       </div>
-    </div>
 
-    <!-- CTA Section -->
-    <div class="cta-section">
-      <div class="container">
-        <div class="cta-card">
-          <TrophyOutlined class="cta-icon" />
-          <h2 class="cta-title">Pronto para começar sua jornada?</h2>
-          <p class="cta-text">
-            Junte-se a centenas de desenvolvedores que já estão se preparando
-            para suas próximas entrevistas.
-          </p>
-          <a-button
-            type="primary"
-            size="large"
-            @click="$router.push('/lessons')"
-          >
-            Começar Agora
-          </a-button>
-        </div>
+      <!-- CTA Section -->
+      <div class="cta-section">
+        <h2 class="cta-title">Pronto para começar sua jornada?</h2>
+        <p class="cta-text">
+          Junte-se a centenas de desenvolvedores que já estão se preparando para
+          suas próximas entrevistas.
+        </p>
+        <a-button type="primary" size="large" @click="$router.push('/lessons')">
+          Começar Agora
+        </a-button>
       </div>
     </div>
   </div>
@@ -200,80 +162,83 @@
 
 <style scoped>
   .about-container {
-    min-height: 100vh;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  }
-
-  .container {
+    padding: 40px;
     max-width: 1200px;
     margin: 0 auto;
-    padding: 0 24px;
+    width: 100%;
   }
 
-  /* Hero Section */
-  .hero-section {
-    padding: 80px 24px;
+  .about-card {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow:
+      0 1px 3px rgba(0, 0, 0, 0.1),
+      0 1px 2px rgba(0, 0, 0, 0.06);
+    transition: box-shadow 0.3s ease;
+  }
+
+  .about-card:hover {
+    box-shadow:
+      0 4px 6px rgba(0, 0, 0, 0.07),
+      0 2px 4px rgba(0, 0, 0, 0.06);
+  }
+
+  .header {
+    margin-bottom: 32px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #f0f0f0;
     text-align: center;
-    color: white;
   }
 
-  .hero-icon {
+  .header-icon {
     font-size: 48px;
-    margin-right: 16px;
-    animation: float 3s ease-in-out infinite;
+    color: #001633;
+    margin-bottom: 12px;
   }
 
-  .hero-title {
-    font-size: 48px;
-    font-weight: bold;
-    margin-bottom: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-wrap: wrap;
+  .header h1 {
+    font-size: 24px;
+    margin-bottom: 12px;
+    color: #1a1a1a;
+    font-weight: 600;
   }
 
-  .hero-subtitle {
+  .subtitle {
+    font-size: 14px;
+    color: #8c8c8c;
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  .section-title {
     font-size: 20px;
-    max-width: 800px;
-    margin: 0 auto;
-    line-height: 1.6;
-    opacity: 0.95;
+    font-weight: 600;
+    margin-bottom: 20px;
+    color: #262626;
+    text-align: center;
   }
 
   /* Mission Section */
   .mission-section {
-    background: white;
-    padding: 80px 0;
-  }
-
-  .mission-card {
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-    border-radius: 24px;
-    padding: 48px;
-    text-align: center;
-  }
-
-  .section-title {
-    font-size: 36px;
-    font-weight: bold;
+    background: #fafafa;
+    padding: 24px;
+    border-radius: 12px;
     margin-bottom: 24px;
     text-align: center;
-    color: #2d3748;
   }
 
   .mission-text {
-    font-size: 18px;
-    line-height: 1.8;
+    font-size: 14px;
+    line-height: 1.6;
     color: #4a5568;
-    max-width: 800px;
-    margin: 0 auto 32px;
+    margin-bottom: 20px;
   }
 
   .mission-highlights {
     display: flex;
     justify-content: center;
-    gap: 32px;
+    gap: 20px;
     flex-wrap: wrap;
   }
 
@@ -281,25 +246,26 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 16px;
+    font-size: 13px;
     color: #2d3748;
   }
 
-  .highlight-icon {
-    color: #48bb78;
-    font-size: 20px;
+  .highlight svg {
+    color: #001633;
   }
 
   /* Stats Section */
   .stats-section {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    padding: 60px 0;
+    background: linear-gradient(135deg, #001633 0%, #060042 100%);
+    padding: 32px 24px;
+    border-radius: 12px;
+    margin-bottom: 24px;
   }
 
   .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 32px;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 24px;
     text-align: center;
   }
 
@@ -308,214 +274,216 @@
   }
 
   .stat-number {
-    font-size: 48px;
+    font-size: 32px;
     font-weight: bold;
-    margin-bottom: 8px;
+    margin-bottom: 4px;
   }
 
   .stat-label {
-    font-size: 16px;
+    font-size: 13px;
     opacity: 0.9;
   }
 
   /* Values Section */
   .values-section {
-    background: white;
-    padding: 80px 0;
+    margin-bottom: 24px;
   }
 
   .values-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 32px;
-    margin-top: 48px;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
   }
 
   .value-card {
+    background: #fafafa;
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid #f0f0f0;
     text-align: center;
-    padding: 32px;
-    border-radius: 16px;
-    background: #f7fafc;
-    transition:
-      transform 0.3s,
-      box-shadow 0.3s;
+    transition: all 0.2s ease;
   }
 
   .value-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    background: #ffffff;
+    border-color: #d9d9d9;
+    transform: translateY(-2px);
   }
 
   .value-icon {
-    font-size: 48px;
-    color: #667eea;
-    margin-bottom: 16px;
+    font-size: 32px;
+    color: #001633;
+    margin-bottom: 12px;
   }
 
-  .value-title {
-    font-size: 24px;
-    font-weight: bold;
-    margin-bottom: 16px;
-    color: #2d3748;
+  .value-card h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #262626;
   }
 
-  .value-description {
+  .value-card p {
+    font-size: 13px;
     color: #4a5568;
-    line-height: 1.6;
+    line-height: 1.5;
+    margin: 0;
   }
 
   /* Language Section */
   .language-section {
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-    padding: 80px 0;
-  }
-
-  .language-content {
+    background: #fafafa;
+    padding: 24px;
+    border-radius: 12px;
+    margin-bottom: 24px;
     text-align: center;
   }
 
   .language-icon {
-    font-size: 64px;
-    color: #667eea;
-    margin-bottom: 24px;
+    font-size: 40px;
+    color: #001633;
+    margin-bottom: 12px;
   }
 
   .language-text {
-    font-size: 18px;
-    line-height: 1.8;
+    font-size: 14px;
+    line-height: 1.6;
     color: #4a5568;
-    max-width: 800px;
-    margin: 0 auto 32px;
+    max-width: 700px;
+    margin: 0 auto 20px;
   }
 
   .language-features {
     display: flex;
     justify-content: center;
-    gap: 24px;
+    gap: 12px;
     flex-wrap: wrap;
   }
 
   .feature {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     background: white;
-    padding: 12px 24px;
-    border-radius: 48px;
-    color: #667eea;
-    font-weight: 500;
+    padding: 8px 16px;
+    border-radius: 24px;
+    font-size: 12px;
+    color: #001633;
+    border: 1px solid #e2e8f0;
   }
 
   /* Team Section */
   .team-section {
-    background: white;
-    padding: 80px 0;
-  }
-
-  .team-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 32px;
-    margin-top: 48px;
+    margin-bottom: 24px;
+    text-align: center;
   }
 
   .team-card {
-    text-align: center;
+    background: linear-gradient(135deg, #001633 0%, #060042 100%);
     padding: 32px;
-    border-radius: 16px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
     color: white;
   }
 
   .team-icon {
-    font-size: 64px;
-    margin-bottom: 16px;
+    font-size: 48px;
+    margin-bottom: 12px;
   }
 
-  .team-name {
-    font-size: 24px;
-    font-weight: bold;
+  .team-card h3 {
+    font-size: 20px;
+    font-weight: 600;
     margin-bottom: 8px;
   }
 
   .team-role {
-    font-size: 16px;
+    font-size: 14px;
     opacity: 0.9;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
   }
 
   .team-description {
-    font-size: 14px;
-    line-height: 1.6;
+    font-size: 13px;
     opacity: 0.8;
+    margin: 0;
   }
 
   /* CTA Section */
   .cta-section {
-    padding: 80px 0;
-    background: white;
-  }
-
-  .cta-card {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 24px;
-    padding: 48px;
     text-align: center;
-    color: white;
-  }
-
-  .cta-icon {
-    font-size: 64px;
-    margin-bottom: 24px;
+    padding: 24px;
+    background: #fafafa;
+    border-radius: 12px;
   }
 
   .cta-title {
-    font-size: 32px;
-    font-weight: bold;
-    margin-bottom: 16px;
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #262626;
   }
 
   .cta-text {
-    font-size: 18px;
-    margin-bottom: 32px;
-    opacity: 0.9;
+    font-size: 14px;
+    color: #4a5568;
+    margin-bottom: 20px;
   }
 
-  /* Animations */
-  @keyframes float {
-    0%,
-    100% {
-      transform: translateY(0);
-    }
-    50% {
-      transform: translateY(-10px);
-    }
-  }
-
-  /* Responsive */
-  @media (max-width: 768px) {
-    .hero-title {
-      font-size: 32px;
+  /* Tablet */
+  @media (min-width: 768px) {
+    .about-container {
+      padding: 24px;
     }
 
-    .hero-subtitle {
-      font-size: 16px;
-    }
-
-    .section-title {
-      font-size: 28px;
-    }
-
-    .mission-card {
+    .about-card {
       padding: 32px;
     }
 
-    .mission-text {
-      font-size: 16px;
+    .header h1 {
+      font-size: 28px;
+    }
+
+    .subtitle {
+      font-size: 15px;
+    }
+
+    .section-title {
+      font-size: 22px;
     }
 
     .stat-number {
       font-size: 36px;
+    }
+
+    .values-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  /* Desktop */
+  @media (min-width: 1024px) {
+    .about-container {
+      padding: 32px;
+    }
+
+    .header h1 {
+      font-size: 32px;
+    }
+
+    .subtitle {
+      font-size: 16px;
+    }
+
+    .mission-text {
+      font-size: 15px;
+    }
+
+    .value-card h3 {
+      font-size: 20px;
+    }
+
+    .value-card p {
+      font-size: 14px;
     }
 
     .cta-title {
