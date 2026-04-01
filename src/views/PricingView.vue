@@ -3,46 +3,39 @@
     name: 'PricingView',
   };
 </script>
+
 <script lang="ts" setup>
+  import BaseCard from '@/components/UI/BaseCard.vue';
   import { plans } from '@/Plans/Plans';
   import { useAuthStore } from '@/stores/auth';
   import { checkout } from '@/services/checkout';
 
   const auth = useAuthStore();
 
-  const handleUpgrade = async () => {
-    await checkout(auth);
+  const handleUpgrade = async (plan: string) => {
+    await checkout(auth, plan as 'monthly' | 'yearly');
   };
 </script>
+
 <template>
   <div class="pricing">
     <h1>Planos</h1>
 
-    <a-row :gutter="16" class="pricing-box">
-      <a-col v-for="plan in plans" :key="plan.name">
-        <a-card>
-          <template #title>
-            <h2>{{ plan.name }}</h2>
-          </template>
-          <h2>US$ {{ plan.price }}</h2>
+    <div class="pricing-box">
+      <BaseCard v-for="plan in plans" :key="plan.name" :title="plan.name">
+        <h2>{{ plan.price }}</h2>
 
-          <ul class="features">
-            <li v-for="f in plan.features" :key="f" class="list">
-              {{ f }}
-            </li>
-          </ul>
+        <ul>
+          <li v-for="f in plan.features" :key="f">
+            {{ f }}
+          </li>
+        </ul>
 
-          <a-button
-            type="primary"
-            block
-            @click="handleUpgrade"
-            class="checkout-btn"
-          >
-            Choose Plan
-          </a-button>
-        </a-card>
-      </a-col>
-    </a-row>
+        <a-button type="primary" block @click="handleUpgrade(plan.type)">
+          Choose Plan
+        </a-button>
+      </BaseCard>
+    </div>
   </div>
 </template>
 
