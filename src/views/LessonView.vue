@@ -9,6 +9,7 @@
   import Loading from '@/components/Loading/Loading.vue';
   import AlertComponent from '@/components/AlertComponent/AlertComponent.vue';
   import { useAuthStore } from '@/stores/auth';
+  import BaseCard from '@/components/UI/BaseCard.vue';
 
   const lessonStore = useLessonStore();
   const router = useRouter();
@@ -50,7 +51,13 @@
       return;
     }
     if (user.value) {
-      await lessonStore.fetchLesson(Number(user.value.id));
+      const storedSubject = localStorage.getItem('subject') || 'behavioral';
+      const storedLevel = localStorage.getItem('level') || 'junior';
+      await lessonStore.fetchLesson({
+        userId: Number(user.value.id),
+        focus: storedSubject,
+        level: storedLevel,
+      });
       await lessonStore.startLesson();
       if (lesson.value) {
         askQuestion();
@@ -72,14 +79,19 @@
     <Loading v-if="loading || submitLoading" />
 
     <div v-else>
-      <a-card v-if="feedback === null">
-        <h2>{{ lesson && lesson.length > 0 ? lesson[0].question : '' }}</h2>
+      <!-- Pergunta -->
+      <BaseCard v-if="feedback === null">
+        <h2>
+          {{ lesson && lesson.length > 0 ? lesson[0].question : '' }}
+        </h2>
+
         <SpeakingAvatar
           :isSpeaking="isSpeaking"
           :question="
             lesson && lesson.length > 0 ? (lesson[0].question ?? '') : ''
           "
         />
+
         <VoiceRecorder
           :modelValue="answer"
           @update:modelValue="answer = $event"
@@ -88,11 +100,14 @@
         <a-button type="primary" block style="margin-top: 20px" @click="submit">
           Submit Answer
         </a-button>
-      </a-card>
-      <a-card v-else>
+      </BaseCard>
+
+      <!-- Feedback -->
+      <BaseCard v-else>
         <h2>Feedback</h2>
         <p>Score: {{ feedback.score }}</p>
         <p>{{ feedback.feedback }}</p>
+
         <a-button
           type="primary"
           block
@@ -101,9 +116,10 @@
         >
           Next Question
         </a-button>
-      </a-card>
+      </BaseCard>
     </div>
   </div>
+
   <AlertComponent
     v-if="noAnswerAlert"
     :message="noAnswerAlert"
@@ -122,6 +138,7 @@
     margin: auto;
     padding: 40px;
   }
+
   h1,
   h2 {
     text-align: center;

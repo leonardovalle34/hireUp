@@ -1,21 +1,33 @@
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase';
 
 export async function canUserTakeLesson(userId: string) {
   const { data, error } = await supabase.rpc('can_user_take_lesson', {
     uid: userId,
-  })
+  });
 
-  if (error) throw error
+  if (error) throw error;
 
-  return data
+  return data;
 }
 
-export async function getLesson(userId: number) {
-  const { data, error } = await supabase.rpc('get_random_question', { uid: userId })
+export async function getLesson({
+  userId,
+  focus,
+  level,
+}: {
+  userId: number;
+  focus: string;
+  level: string;
+}) {
+  const { data, error } = await supabase.rpc('get_random_question', {
+    uid: userId,
+    p_focus: focus,
+    p_level: level,
+  });
 
-  if (error) throw error
+  if (error) throw error;
 
-  return data
+  return data;
 }
 
 export async function createLessonSession(userId: string, lessonId: number) {
@@ -23,25 +35,28 @@ export async function createLessonSession(userId: string, lessonId: number) {
     .from('lesson_sessions')
     .insert([{ user_id: userId, lesson_id: lessonId }])
     .select()
-    .single()
+    .single();
 
-  if (error) throw error
+  if (error) throw error;
 
-  return data
+  return data;
 }
 
 export async function saveAnswer(
   userId: number,
   lessonId: number,
-  answer: string
+  answer: string,
 ) {
-  const { data, error } = await supabase.from('user_answers').insert({
-    user_id: userId,
-    lesson_id: lessonId,
-    answer: answer,
-  }).select().single()
+  const { data, error } = await supabase
+    .from('user_answers')
+    .insert({
+      user_id: userId,
+      lesson_id: lessonId,
+      answer,
+    })
+    .select()
+    .single();
 
-  if (error) throw error
-
-  return data
+  if (error) throw error;
+  return data;
 }

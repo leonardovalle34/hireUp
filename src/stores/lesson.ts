@@ -1,10 +1,13 @@
-import { defineStore } from 'pinia'
-import { useAuthStore } from './auth'
-import { canUserTakeLesson, getLesson, createLessonSession, saveAnswer } from '@/services/lesson'
-import { IFeedback } from '@/interface/IFeedback'
-import { ILesson } from '@/interface/ILesson'
-
-
+import { defineStore } from 'pinia';
+import { useAuthStore } from './auth';
+import {
+  canUserTakeLesson,
+  getLesson,
+  createLessonSession,
+  saveAnswer,
+} from '@/services/lesson';
+import { IFeedback } from '@/interface/IFeedback';
+import { ILesson } from '@/interface/ILesson';
 
 export const useLessonStore = defineStore('lesson', {
   state: () => ({
@@ -18,45 +21,53 @@ export const useLessonStore = defineStore('lesson', {
 
   actions: {
     async canStartLesson() {
-      const auth = useAuthStore()
-      return await canUserTakeLesson(auth.user.id)
+      const auth = useAuthStore();
+      return await canUserTakeLesson(auth.user.id);
     },
 
-    async fetchLesson(userId: number) {
-      this.loading = true
-      this.lesson = await getLesson(userId)
-      this.loading = false
+    async fetchLesson({
+      userId,
+      focus,
+      level,
+    }: {
+      userId: number;
+      focus: string;
+      level: string;
+    }) {
+      this.loading = true;
+      this.lesson = await getLesson({ userId, focus, level });
+      this.loading = false;
     },
 
     async startLesson() {
-      const auth = useAuthStore()
+      const auth = useAuthStore();
       if (!this.lesson) {
-        throw new Error('Lesson is not loaded')
+        throw new Error('Lesson is not loaded');
       }
       // If lesson has no id property, throw a more descriptive error
-      const lessonId = this.lesson[0].id
+      const lessonId = this.lesson[0].id;
       if (!lessonId) {
-        throw new Error('Lesson id is missing')
+        throw new Error('Lesson id is missing');
       }
-      const session = await createLessonSession(auth.user.id, lessonId)
-      this.session = session
-      return session
+      const session = await createLessonSession(auth.user.id, lessonId);
+      this.session = session;
+      return session;
     },
 
-    async submitAnswer( answer: string) {
-      this.submitLoading = true
-      const auth = useAuthStore()
+    async submitAnswer(answer: string) {
+      this.submitLoading = true;
+      const auth = useAuthStore();
       if (!this.lesson) {
-        throw new Error('Lesson is not loaded')
+        throw new Error('Lesson is not loaded');
       }
       // Cast lesson to any to access id property
-      const lessonId = this.lesson[0].id
+      const lessonId = this.lesson[0].id;
       if (!lessonId) {
-        throw new Error('Lesson id is missing')
+        throw new Error('Lesson id is missing');
       }
-      const result = await saveAnswer(auth.user.id, lessonId, answer)
-      this.feedback = result
-      this.submitLoading = false
+      const result = await saveAnswer(auth.user.id, lessonId, answer);
+      this.feedback = result;
+      this.submitLoading = false;
     },
   },
-})
+});

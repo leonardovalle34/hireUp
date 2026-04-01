@@ -1,4 +1,7 @@
-export const checkout = async (auth: any) => {
+export const checkout = async (
+  auth: any,
+  planType: 'monthly' | 'yearly' = 'monthly',
+) => {
   const res = await fetch(
     'https://kuczdljitnzixxzflhil.supabase.co/functions/v1/checkout',
     {
@@ -9,6 +12,7 @@ export const checkout = async (auth: any) => {
       body: JSON.stringify({
         email: auth.user.email,
         userId: auth.user.id,
+        planType: planType,
       }),
     },
   );

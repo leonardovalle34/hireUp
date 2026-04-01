@@ -15,6 +15,8 @@ import PricingView from '@/views/PricingView.vue';
 import NewUserForm from '@/views/NewUserForm.vue';
 import LessonView from '@/views/LessonView.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
+import SupportView from '@/views/SupportView.vue';
+import AboutView from '@/views/AboutView.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -30,6 +32,8 @@ const router = createRouter({
         { path: '', component: DashboardView },
         { path: 'lessons', component: LessonView },
         { path: 'pricing', component: PricingView },
+        { path: 'support', component: SupportView },
+        { path: 'about', component: AboutView },
       ],
     },
   ],
