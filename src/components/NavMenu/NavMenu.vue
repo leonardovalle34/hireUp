@@ -11,6 +11,8 @@
     AudioOutlined,
     DollarOutlined,
     LogoutOutlined,
+    InfoCircleOutlined,
+    CustomerServiceOutlined,
   } from '@ant-design/icons-vue';
   import { useScreen } from '@/hooks/useScreen';
   import { useAuthStore } from '@/stores/auth';
@@ -40,6 +42,18 @@
       <a-menu-item key="pricing" @click="router.push('/pricing')">
         <DollarOutlined />
         <span v-if="!isMobile">Assinatura</span>
+      </a-menu-item>
+
+      <a-menu-divider />
+
+      <a-menu-item key="about" @click="router.push('/about')">
+        <InfoCircleOutlined />
+        <span v-if="!isMobile">Quem Somos</span>
+      </a-menu-item>
+
+      <a-menu-item key="support" @click="router.push('/support')">
+        <CustomerServiceOutlined />
+        <span v-if="!isMobile">Suporte</span>
       </a-menu-item>
 
       <a-menu-divider />

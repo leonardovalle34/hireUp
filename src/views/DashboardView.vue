@@ -5,7 +5,7 @@
 </script>
 
 <script setup lang="ts">
-  import { onMounted } from 'vue';
+  import { onMounted, ref } from 'vue';
   import { useAuthStore } from '@/stores/auth';
   import { storeToRefs } from 'pinia';
   import AlertComponent from '@/components/AlertComponent/AlertComponent.vue';
@@ -13,9 +13,33 @@
 
   const auth = useAuthStore();
   const { dashboardUser } = storeToRefs(auth);
+  const typeOfQuestion = ref('behavioral');
+  const level = ref('junior');
+
+  const onSubjectChange = (value: string) => {
+    typeOfQuestion.value = value;
+    localStorage.setItem('subject', value);
+  };
+
+  const onLevelChange = (value: string) => {
+    level.value = value;
+    localStorage.setItem('level', value);
+  };
 
   onMounted(() => {
     auth.fetchUser();
+    const storedSubject = localStorage.getItem('subject');
+    const storedLevel = localStorage.getItem('level');
+    if (storedSubject) {
+      typeOfQuestion.value = storedSubject;
+    } else {
+      localStorage.setItem('subject', typeOfQuestion.value);
+    }
+    if (storedLevel) {
+      level.value = storedLevel;
+    } else {
+      localStorage.setItem('level', level.value);
+    }
   });
 </script>
 
@@ -69,8 +93,50 @@
         <div class="card">
           <p class="label">Treinos restantes</p>
           <h2>
-            {{ dashboardUser?.remaining }}
+            {{
+              dashboardUser?.remaining === null
+                ? 'Ilimitados'
+                : dashboardUser?.remaining
+            }}
           </h2>
+        </div>
+        <div class="card">
+          <p class="label">Tech</p>
+          <a-select
+            v-model:value="typeOfQuestion"
+            @change="onSubjectChange"
+            class="select"
+            placeholder="Selecione uma tecnologia"
+          >
+            <a-select-option value="opinion">Opinião</a-select-option>
+            <a-select-option value="behavioral">Comportamental</a-select-option>
+            <a-select-option value="react">React</a-select-option>
+            <a-select-option value="next">Next.js</a-select-option>
+            <a-select-option value="javascript">JavaScript</a-select-option>
+            <a-select-option value="typescript">TypeScript</a-select-option>
+            <a-select-option value="python">Python</a-select-option>
+            <a-select-option value="node">Node.js/Backend</a-select-option>
+            <a-select-option value="java">Java</a-select-option>
+            <a-select-option value="devops">DevOps</a-select-option>
+            <a-select-option value="architecture">Arquitetura</a-select-option>
+            <a-select-option value="php">PHP</a-select-option>
+            <a-select-option value="ruby">Ruby</a-select-option>
+            <a-select-option value="frontend">Frontend</a-select-option>
+          </a-select>
+        </div>
+
+        <div class="card">
+          <p class="label">Senioridade</p>
+          <a-select
+            v-model:value="level"
+            @change="onLevelChange"
+            class="select"
+            placeholder="Selecione a senioridade"
+          >
+            <a-select-option value="junior">Júnior</a-select-option>
+            <a-select-option value="pleno">Pleno</a-select-option>
+            <a-select-option value="senior">Sênior</a-select-option>
+          </a-select>
         </div>
       </div>
     </div>
@@ -156,6 +222,16 @@
     color: #262626;
   }
 
+  .card-dropdown {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .select {
+    width: 100%;
+  }
+
   /* Tablet */
   @media (min-width: 768px) {
     .dashboard-container {
@@ -186,7 +262,7 @@
     }
 
     .dashboard-card {
-      padding: 40px;
+      padding: 10px;
     }
 
     .header h1 {

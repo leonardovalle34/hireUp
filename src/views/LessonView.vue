@@ -50,10 +50,12 @@
       return;
     }
     if (user.value) {
+      const storedSubject = localStorage.getItem('subject') || 'behavioral';
+      const storedLevel = localStorage.getItem('level') || 'junior';
       await lessonStore.fetchLesson({
         userId: Number(user.value.id),
-        focus: 'frontend',
-        level: 'junior',
+        focus: storedSubject,
+        level: storedLevel,
       });
       await lessonStore.startLesson();
       if (lesson.value) {

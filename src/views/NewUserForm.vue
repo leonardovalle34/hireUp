@@ -7,12 +7,14 @@
 <script setup lang="ts">
   import { ref } from 'vue';
   import { useAuthStore } from '@/stores/auth';
+  import router from '@/router';
 
   const auth = useAuthStore();
 
   const name = ref('');
   const email = ref('');
   const password = ref('');
+  const confirmPassword = ref('');
   const error = ref('');
 
   const handleRegister = async () => {
@@ -33,7 +35,18 @@
       return;
     }
 
+    if (password.value !== confirmPassword.value) {
+      error.value = 'As senhas não coincidem';
+      return;
+    }
+
     await auth.register(email.value, password.value, name.value);
+    if (auth.error) {
+      error.value = auth.error;
+      return;
+    } else {
+      router.push('/');
+    }
   };
 </script>
 
@@ -58,6 +71,14 @@
         <a-form-item label="Senha">
           <a-input-password
             v-model:value="password"
+            placeholder="••••••••"
+            size="large"
+          />
+        </a-form-item>
+
+        <a-form-item label="Confirmar Senha">
+          <a-input-password
+            v-model:value="confirmPassword"
             placeholder="••••••••"
             size="large"
           />

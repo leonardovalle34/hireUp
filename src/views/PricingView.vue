@@ -10,8 +10,8 @@
 
   const auth = useAuthStore();
 
-  const handleUpgrade = async () => {
-    await checkout(auth);
+  const handleUpgrade = async (plan: string) => {
+    await checkout(auth, plan as 'monthly' | 'yearly');
   };
 </script>
 <template>
@@ -21,7 +21,7 @@
     <a-row :gutter="16" class="pricing-box">
       <a-col v-for="plan in plans" :key="plan.name">
         <a-card :title="plan.name">
-          <h2>R$ {{ plan.price }}</h2>
+          <h2>{{ plan.price }}</h2>
 
           <ul>
             <li v-for="f in plan.features" :key="f">
@@ -29,7 +29,7 @@
             </li>
           </ul>
 
-          <a-button type="primary" block @click="handleUpgrade">
+          <a-button type="primary" block @click="handleUpgrade(plan.type)">
             Choose Plan
           </a-button>
         </a-card>
