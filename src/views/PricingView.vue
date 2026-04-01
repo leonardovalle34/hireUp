@@ -44,6 +44,7 @@
     max-width: 1000px;
     margin: auto;
     padding: 40px;
+    gap: 10px;
   }
 
   .pricing-box {
@@ -55,5 +56,12 @@
   h1 {
     text-align: center;
     margin-bottom: 40px;
+  }
+  .checkout-btn {
+    margin-top: 30px;
+  }
+
+  .list {
+    margin: 10px 0;
   }
 </style>
