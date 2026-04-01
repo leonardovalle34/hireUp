@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 
 declare global {
   interface ImportMetaEnv {
+    VITE_GOOGLE_URL: string | undefined;
     readonly BASE_URL: string;
   }
   interface ImportMeta {
