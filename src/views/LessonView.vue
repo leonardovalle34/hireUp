@@ -88,7 +88,7 @@
         <SpeakingAvatar
           :isSpeaking="isSpeaking"
           :question="
-            lesson && lesson.length > 0 ? (lesson[0].question ?? '') : ''
+            lesson && lesson.length > 0 ? lesson[0].question ?? '' : ''
           "
         />
 

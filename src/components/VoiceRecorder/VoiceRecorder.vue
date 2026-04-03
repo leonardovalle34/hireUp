@@ -3,6 +3,7 @@
     name: 'VoiceRecorder',
   };
 </script>
+
 <script lang="ts" setup>
   import { onMounted, ref, watch, nextTick } from 'vue';
 
@@ -11,81 +12,116 @@
   }>();
 
   const emit = defineEmits(['update:modelValue']);
+
   const recording = ref(false);
-  const transcript = ref('');
-  const finalTranscript = ref('');
+  const transcript = ref(props.modelValue || '');
   const transcriptCard = ref<any | null>(null);
 
   let recognition: any = null;
+  let lastText = '';
+  let silenceTimer: any = null;
+
+  // 🔥 sync com o pai
+  watch(
+    () => props.modelValue,
+    (newValue) => {
+      if (newValue !== transcript.value) {
+        transcript.value = newValue ?? '';
+        scrollToBottom();
+      }
+    },
+  );
+
+  // 🔥 sempre envia pro pai
+  watch(transcript, (val) => {
+    emit('update:modelValue', val);
+    scrollToBottom();
+  });
 
   const scrollToBottom = () => {
     nextTick(() => {
       const cardElement: any = transcriptCard.value?.$el;
-      if (transcriptCard.value) {
+      if (cardElement) {
         cardElement.scrollTop = cardElement.scrollHeight;
       }
     });
   };
 
-  watch(
-    () => props.modelValue,
-    (newValue) => {
-      transcript.value = newValue ?? '';
-      scrollToBottom();
-    },
-  );
-
-  watch(transcript, () => {
-    scrollToBottom();
-  });
-
   onMounted(() => {
-    const speechRecognition =
+    const SpeechRecognition =
       (window as any).SpeechRecognition ||
       (window as any).webkitSpeechRecognition;
-    if (!speechRecognition) {
+
+    if (!SpeechRecognition) {
       alert('Speech recognition is not supported in this browser.');
       return;
     }
 
-    recognition = new speechRecognition();
+    recognition = new SpeechRecognition();
 
     recognition.lang = 'en-US';
-    recognition.interimResults = true;
-    recognition.continuous = true;
+
+    // 🔥 ESSENCIAL (remove duplicação)
+    recognition.interimResults = false;
+
+    // 🔥 melhor no Android
+    recognition.continuous = false;
 
     recognition.onresult = (event: any) => {
-      let interim = '';
+      const text = event.results[0][0].transcript.trim();
 
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const transcriptPart = event.results[i][0].transcript;
-
-        if (event.results[i].isFinal) {
-          finalTranscript.value += transcriptPart + ' ';
-        } else {
-          interim += transcriptPart;
-        }
+      // 🔥 evita duplicação
+      if (text && text !== lastText) {
+        transcript.value += text + ' ';
+        lastText = text;
       }
+    };
 
-      transcript.value = finalTranscript.value + interim;
-      emit('update:modelValue', transcript.value);
+    recognition.onend = () => {
+      if (!recording.value) return;
+
+      // 🔥 restart automático (respiração)
+      setTimeout(() => {
+        startListening();
+      }, 300);
+    };
+
+    recognition.onerror = () => {
+      if (recording.value) {
+        setTimeout(startListening, 500);
+      }
     };
   });
 
+  function startListening() {
+    try {
+      recognition.start();
+
+      // 🔥 fallback anti-travamento
+      clearTimeout(silenceTimer);
+      silenceTimer = setTimeout(() => {
+        recognition.stop();
+      }, 6000);
+    } catch {}
+  }
+
   function startRecording() {
-    if (!recognition) return;
     transcript.value = '';
-    finalTranscript.value = '';
-    recognition.start();
+    lastText = '';
     recording.value = true;
+
+    startListening();
   }
 
   function stopRecording() {
-    if (!recognition) return;
-    recognition.stop();
     recording.value = false;
+
+    try {
+      recognition.stop();
+    } catch {}
   }
 </script>
+
 <template>
   <div>
     <a-space direction="vertical" style="width: 100%">
@@ -117,6 +153,7 @@
     </a-space>
   </div>
 </template>
+
 <style scoped>
   .voice-record-transcript {
     max-height: 100px;
