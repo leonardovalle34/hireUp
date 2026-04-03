@@ -92,10 +92,7 @@
           "
         />
 
-        <VoiceRecorder
-          :modelValue="answer"
-          @update:modelValue="answer = $event"
-        />
+        <VoiceRecorder v-model="answer" />
 
         <a-button type="primary" block style="margin-top: 20px" @click="submit">
           Submit Answer

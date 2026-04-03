@@ -5,7 +5,7 @@
 </script>
 
 <script lang="ts" setup>
-  import { onMounted, ref, watch, nextTick } from 'vue';
+  import { ref, watch } from 'vue';
 
   const props = defineProps<{
     modelValue?: string;
@@ -14,124 +14,88 @@
   const emit = defineEmits(['update:modelValue']);
 
   const recording = ref(false);
+  const loading = ref(false);
   const transcript = ref(props.modelValue || '');
-  const transcriptCard = ref<any | null>(null);
 
-  let recognition: any = null;
-  let lastText = '';
-  let silenceTimer: any = null;
+  let mediaRecorder: MediaRecorder | null = null;
+  let audioChunks: Blob[] = [];
 
-  // 🔥 sync com o pai
   watch(
     () => props.modelValue,
-    (newValue) => {
-      if (newValue !== transcript.value) {
-        transcript.value = newValue ?? '';
-        scrollToBottom();
+    (val) => {
+      if (val !== transcript.value) {
+        transcript.value = val || '';
       }
     },
   );
 
-  // 🔥 sempre envia pro pai
   watch(transcript, (val) => {
     emit('update:modelValue', val);
-    scrollToBottom();
   });
 
-  const scrollToBottom = () => {
-    nextTick(() => {
-      const cardElement: any = transcriptCard.value?.$el;
-      if (cardElement) {
-        cardElement.scrollTop = cardElement.scrollHeight;
-      }
+  async function startRecording() {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+    mediaRecorder = new MediaRecorder(stream, {
+      mimeType: 'audio/webm',
     });
-  };
 
-  onMounted(() => {
-    const SpeechRecognition =
-      (window as any).SpeechRecognition ||
-      (window as any).webkitSpeechRecognition;
+    audioChunks = [];
 
-    if (!SpeechRecognition) {
-      alert('Speech recognition is not supported in this browser.');
-      return;
-    }
-
-    recognition = new SpeechRecognition();
-
-    recognition.lang = 'en-US';
-
-    // 🔥 ESSENCIAL (remove duplicação)
-    recognition.interimResults = false;
-
-    // 🔥 melhor no Android
-    recognition.continuous = false;
-
-    recognition.onresult = (event: any) => {
-      const text = event.results[0][0].transcript.trim();
-
-      // 🔥 evita duplicação
-      if (text && text !== lastText) {
-        transcript.value += text + ' ';
-        lastText = text;
-      }
+    mediaRecorder.ondataavailable = (event) => {
+      audioChunks.push(event.data);
     };
 
-    recognition.onend = () => {
-      if (!recording.value) return;
-
-      // 🔥 restart automático (respiração)
-      setTimeout(() => {
-        startListening();
-      }, 300);
+    mediaRecorder.onstop = async () => {
+      const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+      await sendToServer(audioBlob);
     };
 
-    recognition.onerror = () => {
-      if (recording.value) {
-        setTimeout(startListening, 500);
-      }
-    };
-  });
-
-  function startListening() {
-    try {
-      recognition.start();
-
-      // 🔥 fallback anti-travamento
-      clearTimeout(silenceTimer);
-      silenceTimer = setTimeout(() => {
-        recognition.stop();
-      }, 6000);
-    } catch {}
-  }
-
-  function startRecording() {
-    transcript.value = '';
-    lastText = '';
+    mediaRecorder.start();
     recording.value = true;
-
-    startListening();
   }
 
   function stopRecording() {
+    mediaRecorder?.stop();
     recording.value = false;
+  }
+
+  async function sendToServer(audioBlob: Blob) {
+    loading.value = true;
 
     try {
-      recognition.stop();
-    } catch {}
+      const formData = new FormData();
+      formData.append('file', audioBlob, 'audio.webm');
+
+      const res = await fetch(
+        'https://SEU_PROJECT.supabase.co/functions/v1/transcribe',
+        {
+          method: 'POST',
+          body: formData,
+        },
+      );
+
+      const data = await res.json();
+      transcript.value = data.text;
+    } catch (err) {
+      console.error(err);
+    }
+
+    loading.value = false;
   }
 </script>
 
 <template>
   <div>
     <a-space direction="vertical" style="width: 100%">
+      <!-- BOTÃO -->
       <a-button
         type="primary"
         v-if="!recording"
         @click="startRecording"
         style="width: 100%"
       >
-        🎤 Start Answer
+        🎤 Start Recording
       </a-button>
 
       <a-button
@@ -140,23 +104,20 @@
         @click="stopRecording"
         style="width: 100%"
       >
-        Stop
+        🔴 Stop Recording
       </a-button>
 
-      <a-card
-        v-if="transcript"
-        class="voice-record-transcript"
-        ref="transcriptCard"
-      >
+      <!-- STATUS -->
+      <div style="text-align: center; font-weight: bold">
+        <span v-if="recording">🎤 Recording...</span>
+        <span v-else-if="loading">⏳ Transcribing...</span>
+        <span v-else-if="transcript">✅ Done</span>
+      </div>
+
+      <!-- TRANSCRIPT -->
+      <a-card v-if="transcript">
         <p>{{ transcript }}</p>
       </a-card>
     </a-space>
   </div>
 </template>
-
-<style scoped>
-  .voice-record-transcript {
-    max-height: 100px;
-    overflow: auto;
-  }
-</style>
