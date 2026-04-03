@@ -2,17 +2,29 @@
   import { onMounted } from 'vue';
   import { useAuthStore } from './stores/auth';
 
-  const auth = useAuthStore();
+  //const auth = useAuthStore();
 
   onMounted(async () => {
     //await auth.fetchUser();
-    auth.listenAuth();
+    //auth.listenAuth();
   });
 </script>
 <template>
-  <div class="app-background">
-    <router-view />
+  <div
+    style="
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    "
+  >
+    <h1 style="font-size: 64px">Under Construction</h1>
+    <p style="font-size: 64px">Coming soon...</p>
   </div>
+
+  <!--<div class="app-background">
+    <router-view />
+  </div>-->
 </template>
 
 <style>
