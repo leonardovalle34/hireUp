@@ -13,7 +13,6 @@
 
   const lessonStore = useLessonStore();
   const router = useRouter();
-  const answer = ref('');
   const noAnswerAlert = ref<string | null>(null);
   const isSpeaking = ref(false);
   const auth = storeToRefs(useAuthStore());
@@ -21,16 +20,15 @@
   const { submitLoading, feedback, lesson, loading } = storeToRefs(lessonStore);
   const { user } = auth;
 
-  const submit = async () => {
-    if (!answer.value.trim()) {
+  const submit = async (audioBlob: Blob) => {
+    if (!audioBlob) {
       noAnswerAlert.value = 'Please provide an answer before submitting.';
       setTimeout(() => {
         noAnswerAlert.value = null;
       }, 2000);
       return;
     }
-    await lessonStore.submitAnswer(answer.value);
-    answer.value = '';
+    await lessonStore.submitAnswer(audioBlob);
   };
 
   const askQuestion = () => {
@@ -92,11 +90,7 @@
           "
         />
 
-        <VoiceRecorder v-model="answer" />
-
-        <a-button type="primary" block style="margin-top: 20px" @click="submit">
-          Submit Answer
-        </a-button>
+        <VoiceRecorder v-model="answer" @audio-recorded="submit" />
       </BaseCard>
 
       <!-- Feedback -->

@@ -1,10 +1,11 @@
 import { defineStore } from 'pinia';
 import { useAuthStore } from './auth';
+import { supabase } from '@/lib/supabase';
 import {
   canUserTakeLesson,
   getLesson,
   createLessonSession,
-  saveAnswer,
+  submitAudio,
 } from '@/services/lesson';
 import { IFeedback } from '@/interface/IFeedback';
 import { ILesson } from '@/interface/ILesson';
@@ -54,18 +55,25 @@ export const useLessonStore = defineStore('lesson', {
       return session;
     },
 
-    async submitAnswer(answer: string) {
+    async submitAnswer(audioBlob: Blob) {
       this.submitLoading = true;
-      const auth = useAuthStore();
+
       if (!this.lesson) {
         throw new Error('Lesson is not loaded');
       }
-      // Cast lesson to any to access id property
+
       const lessonId = this.lesson[0].id;
-      if (!lessonId) {
-        throw new Error('Lesson id is missing');
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
+      if (!token) {
+        throw new Error('User is not authenticated');
       }
-      const result = await saveAnswer(auth.user.id, lessonId, answer);
+
+      const result = await submitAudio(audioBlob, lessonId, token);
+
       this.feedback = result;
       this.submitLoading = false;
     },

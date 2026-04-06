@@ -5,90 +5,70 @@
 </script>
 
 <script lang="ts" setup>
-  import { ref, watch } from 'vue';
+  import { ref } from 'vue';
 
-  const props = defineProps<{
-    modelValue?: string;
-  }>();
-
-  const emit = defineEmits(['update:modelValue']);
-
-  const recording = ref(false);
-  const loading = ref(false);
-  const transcript = ref(props.modelValue || '');
-
-  let mediaRecorder: MediaRecorder | null = null;
-  let audioChunks: Blob[] = [];
-
-  watch(
-    () => props.modelValue,
-    (val) => {
-      if (val !== transcript.value) {
-        transcript.value = val || '';
-      }
-    },
-  );
-
-  watch(transcript, (val) => {
-    emit('update:modelValue', val);
-  });
-
-  async function startRecording() {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
-    mediaRecorder = new MediaRecorder(stream, {
-      mimeType: 'audio/webm',
-    });
-
-    audioChunks = [];
-
-    mediaRecorder.ondataavailable = (event) => {
-      audioChunks.push(event.data);
-    };
-
-    mediaRecorder.onstop = async () => {
-      const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-      await sendToServer(audioBlob);
-    };
-
-    mediaRecorder.start();
-    recording.value = true;
+  interface Emit {
+    (event: 'audio-recorded', audioBlob: Blob): void;
   }
 
+  const recording = ref(false);
+  const audioUrl = ref<string | null>(null);
+  const audioBlob = ref<Blob | null>(null);
+
+  const emit = defineEmits<Emit>();
+
+  let mediaRecorder: MediaRecorder | null = null;
+  let chunks: Blob[] = [];
+
+  async function startRecording() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+      mediaRecorder = new MediaRecorder(stream);
+      chunks = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          chunks.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(chunks, { type: 'audio/webm' });
+        audioBlob.value = blob;
+
+        audioUrl.value = URL.createObjectURL(blob);
+      };
+
+      mediaRecorder.start();
+      recording.value = true;
+    } catch (err) {
+      console.error('Erro ao acessar microfone:', err);
+    }
+  }
+
+  // 🛑 STOP
   function stopRecording() {
-    mediaRecorder?.stop();
+    if (!mediaRecorder) return;
+
+    mediaRecorder.stop();
     recording.value = false;
   }
 
-  async function sendToServer(audioBlob: Blob) {
-    loading.value = true;
+  // 📤 SUBMIT
+  async function submitAudio() {
+    if (!audioBlob.value) return;
 
-    try {
-      const formData = new FormData();
-      formData.append('file', audioBlob, 'audio.webm');
+    const formData = new FormData();
+    formData.append('file', audioBlob.value, 'recording.webm');
 
-      const res = await fetch(
-        'https://SEU_PROJECT.supabase.co/functions/v1/transcribe',
-        {
-          method: 'POST',
-          body: formData,
-        },
-      );
-
-      const data = await res.json();
-      transcript.value = data.text;
-    } catch (err) {
-      console.error(err);
-    }
-
-    loading.value = false;
+    emit('audio-recorded', audioBlob.value);
   }
 </script>
 
 <template>
   <div>
     <a-space direction="vertical" style="width: 100%">
-      <!-- BOTÃO -->
       <a-button
         type="primary"
         v-if="!recording"
@@ -104,20 +84,25 @@
         @click="stopRecording"
         style="width: 100%"
       >
-        🔴 Stop Recording
+        ⏹️ Stop
       </a-button>
 
-      <!-- STATUS -->
-      <div style="text-align: center; font-weight: bold">
-        <span v-if="recording">🎤 Recording...</span>
-        <span v-else-if="loading">⏳ Transcribing...</span>
-        <span v-else-if="transcript">✅ Done</span>
-      </div>
+      <audio
+        v-if="audioUrl"
+        :src="audioUrl"
+        controls
+        style="width: 100%"
+      ></audio>
 
-      <!-- TRANSCRIPT -->
-      <a-card v-if="transcript">
-        <p>{{ transcript }}</p>
-      </a-card>
+      <!-- 📤 Submit -->
+      <a-button
+        type="primary"
+        v-if="audioBlob"
+        @click="submitAudio"
+        style="width: 100%"
+      >
+        📤 Submit Answer
+      </a-button>
     </a-space>
   </div>
 </template>
