@@ -3,89 +3,69 @@
     name: 'VoiceRecorder',
   };
 </script>
+
 <script lang="ts" setup>
-  import { onMounted, ref, watch, nextTick } from 'vue';
+  import { ref } from 'vue';
 
-  const props = defineProps<{
-    modelValue?: string;
-  }>();
-
-  const emit = defineEmits(['update:modelValue']);
-  const recording = ref(false);
-  const transcript = ref('');
-  const finalTranscript = ref('');
-  const transcriptCard = ref<any | null>(null);
-
-  let recognition: any = null;
-
-  const scrollToBottom = () => {
-    nextTick(() => {
-      const cardElement: any = transcriptCard.value?.$el;
-      if (transcriptCard.value) {
-        cardElement.scrollTop = cardElement.scrollHeight;
-      }
-    });
-  };
-
-  watch(
-    () => props.modelValue,
-    (newValue) => {
-      transcript.value = newValue ?? '';
-      scrollToBottom();
-    },
-  );
-
-  watch(transcript, () => {
-    scrollToBottom();
-  });
-
-  onMounted(() => {
-    const speechRecognition =
-      (window as any).SpeechRecognition ||
-      (window as any).webkitSpeechRecognition;
-    if (!speechRecognition) {
-      alert('Speech recognition is not supported in this browser.');
-      return;
-    }
-
-    recognition = new speechRecognition();
-
-    recognition.lang = 'en-US';
-    recognition.interimResults = true;
-    recognition.continuous = true;
-
-    recognition.onresult = (event: any) => {
-      let interim = '';
-
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const transcriptPart = event.results[i][0].transcript;
-
-        if (event.results[i].isFinal) {
-          finalTranscript.value += transcriptPart + ' ';
-        } else {
-          interim += transcriptPart;
-        }
-      }
-
-      transcript.value = finalTranscript.value + interim;
-      emit('update:modelValue', transcript.value);
-    };
-  });
-
-  function startRecording() {
-    if (!recognition) return;
-    transcript.value = '';
-    finalTranscript.value = '';
-    recognition.start();
-    recording.value = true;
+  interface Emit {
+    (event: 'audio-recorded', audioBlob: Blob): void;
   }
 
+  const recording = ref(false);
+  const audioUrl = ref<string | null>(null);
+  const audioBlob = ref<Blob | null>(null);
+
+  const emit = defineEmits<Emit>();
+
+  let mediaRecorder: MediaRecorder | null = null;
+  let chunks: Blob[] = [];
+
+  async function startRecording() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+      mediaRecorder = new MediaRecorder(stream);
+      chunks = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          chunks.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(chunks, { type: 'audio/webm' });
+        audioBlob.value = blob;
+
+        audioUrl.value = URL.createObjectURL(blob);
+      };
+
+      mediaRecorder.start();
+      recording.value = true;
+    } catch (err) {
+      console.error('Erro ao acessar microfone:', err);
+    }
+  }
+
+  // 🛑 STOP
   function stopRecording() {
-    if (!recognition) return;
-    recognition.stop();
+    if (!mediaRecorder) return;
+
+    mediaRecorder.stop();
     recording.value = false;
   }
+
+  // 📤 SUBMIT
+  async function submitAudio() {
+    if (!audioBlob.value) return;
+
+    const formData = new FormData();
+    formData.append('file', audioBlob.value, 'recording.webm');
+
+    emit('audio-recorded', audioBlob.value);
+  }
 </script>
+
 <template>
   <div>
     <a-space direction="vertical" style="width: 100%">
@@ -95,7 +75,7 @@
         @click="startRecording"
         style="width: 100%"
       >
-        🎤 Start Answer
+        🎤 Start Recording
       </a-button>
 
       <a-button
@@ -104,22 +84,25 @@
         @click="stopRecording"
         style="width: 100%"
       >
-        Stop
+        ⏹️ Stop
       </a-button>
 
-      <a-card
-        v-if="transcript"
-        class="voice-record-transcript"
-        ref="transcriptCard"
+      <audio
+        v-if="audioUrl"
+        :src="audioUrl"
+        controls
+        style="width: 100%"
+      ></audio>
+
+      <!-- 📤 Submit -->
+      <a-button
+        type="primary"
+        v-if="audioBlob"
+        @click="submitAudio"
+        style="width: 100%"
       >
-        <p>{{ transcript }}</p>
-      </a-card>
+        📤 Submit Answer
+      </a-button>
     </a-space>
   </div>
 </template>
-<style scoped>
-  .voice-record-transcript {
-    max-height: 100px;
-    overflow: auto;
-  }
-</style>
