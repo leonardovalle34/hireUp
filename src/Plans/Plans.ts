@@ -2,7 +2,7 @@ export const plans = [
   {
     name: 'Pro',
     type: 'monthly',
-    price: 'USD 5',
+    price: 'USD 5,00',
     features: [
       'Treino ilimitado',
       'Renovação mensal',
