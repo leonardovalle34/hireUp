@@ -5,7 +5,6 @@
   const auth = useAuthStore();
 
   onMounted(async () => {
-    //await auth.fetchUser();
     auth.listenAuth();
   });
 </script>
