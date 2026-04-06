@@ -30,7 +30,7 @@ export async function getLesson({
   return data;
 }
 
-export async function createLessonSession(userId: string, lessonId: number) {
+export async function createLessonSession(userId: string, lessonId: string) {
   const { data, error } = await supabase
     .from('lesson_sessions')
     .insert([{ user_id: userId, lesson_id: lessonId }])
@@ -42,21 +42,34 @@ export async function createLessonSession(userId: string, lessonId: number) {
   return data;
 }
 
-export async function saveAnswer(
-  userId: number,
-  lessonId: number,
-  answer: string,
+export async function submitAudio(
+  audioBlob: Blob,
+  lessonId: string,
+  token: string,
 ) {
-  const { data, error } = await supabase
-    .from('user_answers')
-    .insert({
-      user_id: userId,
-      lesson_id: lessonId,
-      answer,
-    })
-    .select()
-    .single();
+  const formData = new FormData();
+  formData.append('file', audioBlob, 'recording.webm');
+  formData.append('lessonId', String(lessonId));
+  console.log('fiormData', formData);
 
-  if (error) throw error;
-  return data;
+  for (let pair of formData.entries()) {
+    console.log('FORM FRONT:', pair[0], pair[1]);
+  }
+
+  const res = await fetch(
+    'https://kuczdljitnzixxzflhil.supabase.co/functions/v1/answer',
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    },
+  );
+
+  if (!res.ok) {
+    throw new Error('Erro ao enviar áudio');
+  }
+
+  return res.json();
 }
