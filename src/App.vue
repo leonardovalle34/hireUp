@@ -2,7 +2,7 @@
   import { onMounted } from 'vue';
   import { useAuthStore } from './stores/auth';
 
-  const auth = useAuthStore();
+  //const auth = useAuthStore();
 
   onMounted(async () => {
     auth.listenAuth();
