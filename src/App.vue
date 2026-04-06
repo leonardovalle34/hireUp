@@ -5,27 +5,13 @@
   //const auth = useAuthStore();
 
   onMounted(async () => {
-    //await auth.fetchUser();
-    //auth.listenAuth();
+    auth.listenAuth();
   });
 </script>
 <template>
-  <div
-    style="
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-    "
-  >
-    <h1 style="font-size: 64px">Under Construction</h1>
-    <p style="font-size: 64px">Coming soon...</p>
-  </div>
-
-  <!--<div class="app-background">
+  <div class="app-background">
     <router-view />
-  </div>-->
+  </div>
 </template>
 
 <style>
