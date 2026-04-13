@@ -19,32 +19,57 @@
 
   let mediaRecorder: MediaRecorder | null = null;
   let chunks: Blob[] = [];
+  let audioCtxUnlocked = false;
 
-  async function startRecording() {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  function unlockAudioContext() {
+    if (audioCtxUnlocked) return;
+    const ctx = new AudioContext();
+    ctx.resume().then(() => {
+      audioCtxUnlocked = true;
+      ctx.close();
+    });
+  }
 
-      mediaRecorder = new MediaRecorder(stream);
-      chunks = [];
+  function getSupportedMimeType(): string {
+    const types = [
+      'audio/mp4',
+      'audio/webm;codecs=opus',
+      'audio/webm',
+      'audio/ogg;codecs=opus',
+      'audio/ogg',
+    ];
+    return types.find((type) => MediaRecorder.isTypeSupported(type)) ?? '';
+  }
 
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          chunks.push(event.data);
-        }
-      };
+  function startRecording() {
+    navigator.mediaDevices
+      .getUserMedia({ audio: true })
+      .then((stream) => {
+        alert('aqui');
+        // tudo aqui dentro ainda está no contexto do gesto
+        const mimeType = getSupportedMimeType();
+        const options = mimeType ? { mimeType } : {};
+        mediaRecorder = new MediaRecorder(stream, options);
+        chunks = [];
 
-      mediaRecorder.onstop = () => {
-        const blob = new Blob(chunks, { type: 'audio/webm' });
-        audioBlob.value = blob;
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0) chunks.push(event.data);
+        };
 
-        audioUrl.value = URL.createObjectURL(blob);
-      };
+        mediaRecorder.onstop = () => {
+          const type = mediaRecorder?.mimeType || 'audio/mp4';
+          const blob = new Blob(chunks, { type });
+          audioBlob.value = blob;
+          audioUrl.value = URL.createObjectURL(blob);
+          stream.getTracks().forEach((track) => track.stop());
+        };
 
-      mediaRecorder.start();
-      recording.value = true;
-    } catch (err) {
-      console.error('Erro ao acessar microfone:', err);
-    }
+        mediaRecorder.start(250);
+        recording.value = true;
+      })
+      .catch((err) => {
+        alert('Error accessing microphone: ' + err.message);
+      });
   }
 
   // 🛑 STOP
@@ -60,7 +85,7 @@
     if (!audioBlob.value) return;
 
     const formData = new FormData();
-    formData.append('file', audioBlob.value, 'recording.webm');
+    formData.append('file', audioBlob.value);
 
     emit('audio-recorded', audioBlob.value);
   }
@@ -72,7 +97,12 @@
       <a-button
         type="primary"
         v-if="!recording"
-        @click="startRecording"
+        @click="
+          () => {
+            unlockAudioContext();
+            startRecording();
+          }
+        "
         style="width: 100%"
       >
         🎤 Start Recording
