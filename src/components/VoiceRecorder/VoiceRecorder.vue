@@ -45,8 +45,6 @@
     navigator.mediaDevices
       .getUserMedia({ audio: true })
       .then((stream) => {
-        alert('aqui');
-        // tudo aqui dentro ainda está no contexto do gesto
         const mimeType = getSupportedMimeType();
         const options = mimeType ? { mimeType } : {};
         mediaRecorder = new MediaRecorder(stream, options);
@@ -72,7 +70,6 @@
       });
   }
 
-  // 🛑 STOP
   function stopRecording() {
     if (!mediaRecorder) return;
 
@@ -80,7 +77,6 @@
     recording.value = false;
   }
 
-  // 📤 SUBMIT
   async function submitAudio() {
     if (!audioBlob.value) return;
 
@@ -124,7 +120,6 @@
         style="width: 100%"
       ></audio>
 
-      <!-- 📤 Submit -->
       <a-button
         type="primary"
         v-if="audioBlob"
