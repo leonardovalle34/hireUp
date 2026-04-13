@@ -47,8 +47,16 @@ export async function submitAudio(
   lessonId: string,
   token: string,
 ) {
+  const mimeType = audioBlob.type || 'audio/mp4';
+  const extension = mimeType.includes('mp4')
+    ? 'mp4'
+    : mimeType.includes('ogg')
+    ? 'ogg'
+    : 'webm';
+  const filename = `recording.${extension}`;
+
   const formData = new FormData();
-  formData.append('file', audioBlob, 'recording.webm');
+  formData.append('file', audioBlob, filename);
   formData.append('lessonId', String(lessonId));
   console.log('fiormData', formData);
 
