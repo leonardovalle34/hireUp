@@ -24,6 +24,11 @@ const router = createRouter({
   routes: [
     { path: '/login', component: LoginView },
     { path: '/signup', component: NewUserForm },
+    {
+      path: '/auth/callback',
+      component: () => import('@/views/AuthCallback.vue'),
+      meta: { requiresAuth: false },
+    },
 
     {
       path: '/',
