@@ -14,7 +14,7 @@ import LoginView from '@/views/LoginView.vue';
 import { useAuthStore } from '@/stores/auth';
 import PricingView from '@/views/PricingView.vue';
 import NewUserForm from '@/views/NewUserForm.vue';
-import LessonView from '@/views/LessonView.vue';
+import InterviewView from '@/views/InterviewView.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import SupportView from '@/views/SupportView.vue';
 import AboutView from '@/views/AboutView.vue';
@@ -36,7 +36,7 @@ const router = createRouter({
       meta: { requiresAuth: true },
       children: [
         { path: '', component: DashboardView },
-        { path: 'lessons', component: LessonView },
+        { path: 'interview', component: InterviewView },
         { path: 'pricing', component: PricingView },
         { path: 'support', component: SupportView },
         { path: 'about', component: AboutView },

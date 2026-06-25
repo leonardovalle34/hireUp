@@ -34,9 +34,9 @@
         <span v-if="!isMobile">Dashboard</span>
       </a-menu-item>
 
-      <a-menu-item key="lesson" @click="router.push('/lessons')">
+      <a-menu-item key="lesson" @click="router.push('/interview')">
         <AudioOutlined />
-        <span v-if="!isMobile">Treino</span>
+        <span v-if="!isMobile">Treino entrevista</span>
       </a-menu-item>
 
       <a-menu-item key="pricing" @click="router.push('/pricing')">

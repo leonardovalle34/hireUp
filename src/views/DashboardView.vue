@@ -1,150 +1,341 @@
 <script lang="ts">
-  export default {
-    name: 'DashboardView',
-  };
+  export default { name: 'DashboardView' };
 </script>
 
 <script setup lang="ts">
-  import { onMounted, ref } from 'vue';
+  import { onMounted, ref, computed, watch, nextTick } from 'vue';
   import { useAuthStore } from '@/stores/auth';
   import { storeToRefs } from 'pinia';
-  import AlertComponent from '@/components/AlertComponent/AlertComponent.vue';
-  import BaseCard from '@/components/UI/BaseCard.vue';
-  import { ExclamationCircleOutlined } from '@ant-design/icons-vue';
+  import { useRouter } from 'vue-router';
+  import { Chart, registerables } from 'chart.js';
+  const aceWaving = new URL('../assets/ace/ace-waving.png', import.meta.url)
+    .href;
+  const aceThinking = new URL('../assets/ace/ace-thinking.png', import.meta.url)
+    .href;
+
+  Chart.register(...registerables);
 
   const auth = useAuthStore();
   const { dashboardUser } = storeToRefs(auth);
-  const typeOfQuestion = ref('behavioral');
-  const level = ref('junior');
-  const showAlert = ref(false);
+  const router = useRouter();
+  const typeOfQuestion = ref<string | null>(null);
+  const weeklyChartRef = ref<HTMLCanvasElement | null>(null);
+  const scoreChartRef = ref<HTMLCanvasElement | null>(null);
+  let weeklyChartInstance: Chart | null = null;
+  let scoreChartInstance: Chart | null = null;
+
+  const planLabel = computed(() => {
+    const p = dashboardUser.value?.plan;
+    if (p === 'free') return 'Free';
+    if (p === 'practice') return 'Practice';
+    if (p === 'fluent') return 'Fluent';
+    if (p === 'pro') return 'Pro';
+    return p?.toUpperCase() ?? '—';
+  });
+
+  const scoreColor = computed(() => {
+    const s = dashboardUser.value?.avg_score ?? 0;
+    if (s >= 12) return '#16a34a';
+    if (s >= 8) return '#ca8a04';
+    return '#dc2626';
+  });
+
+  const streakMessage = computed(() => {
+    const s = dashboardUser.value?.streak ?? 0;
+    if (s === 0) return 'Nenhum dia ainda';
+    if (s === 1) return '1 dia seguido';
+    return `${s} dias seguidos`;
+  });
+
+  const aceImage = computed(() => {
+    const s = dashboardUser.value?.streak ?? 0;
+    if (s === 0) return aceThinking;
+    return aceWaving;
+  });
+
+  const remainingLabel = computed(() => {
+    const r = dashboardUser.value?.remaining;
+    if (r === null || r === undefined) return '∞';
+    return r;
+  });
+
+  const canTrain = computed(() => {
+    const r = dashboardUser.value?.remaining;
+    return r === null || r === undefined || r > 0;
+  });
+
+  const hasArea = computed(() => !!typeOfQuestion.value);
+  const calendarDays = computed(() => {
+    const days = [];
+    const activeDays = new Set(dashboardUser.value?.active_days ?? []);
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const key = d.toISOString().split('T')[0];
+      days.push({ key, active: activeDays.has(key), isToday: i === 0 });
+    }
+    return days;
+  });
 
   const onSubjectChange = (value: string) => {
-    typeOfQuestion.value = value;
-    localStorage.setItem('subject', value);
+    typeOfQuestion.value = value ?? null;
+    if (value) {
+      localStorage.setItem('subject', value);
+    } else {
+      localStorage.removeItem('subject');
+    }
   };
 
-  const onLevelChange = (value: string) => {
-    level.value = value;
-    localStorage.setItem('level', value);
+  const goToTraining = () => {
+    router.push('/interview');
   };
 
-  onMounted(() => {
-    auth.fetchUser();
-    const storedSubject = localStorage.getItem('subject');
-    const storedLevel = localStorage.getItem('level');
+  function buildCharts() {
+    const weekly = dashboardUser.value?.weekly_chart ?? [];
+    const scores = dashboardUser.value?.score_chart ?? [];
 
-    if (dashboardUser.value?.plan === 'free') {
-      showAlert.value = true;
-      setTimeout(() => {
-        showAlert.value = false;
-      }, 10000);
+    if (weeklyChartRef.value) {
+      if (weeklyChartInstance) weeklyChartInstance.destroy();
+      weeklyChartInstance = new Chart(weeklyChartRef.value, {
+        type: 'bar',
+        data: {
+          labels: weekly.map((d) => d.label),
+          datasets: [
+            {
+              label: 'Treinos',
+              data: weekly.map((d) => d.count),
+              backgroundColor: weekly.map((d) => {
+                const today = new Date().toISOString().split('T')[0];
+                return d.day === today ? '#1d4ed8' : '#bfdbfe';
+              }),
+              borderRadius: 6,
+              borderSkipped: false,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { stepSize: 1, font: { size: 11 } },
+              grid: { color: '#f3f4f6' },
+            },
+            x: { ticks: { font: { size: 12 } }, grid: { display: false } },
+          },
+        },
+      });
     }
 
-    if (storedSubject) {
-      typeOfQuestion.value = storedSubject;
-    } else {
-      localStorage.setItem('subject', typeOfQuestion.value);
-    }
+    if (scoreChartRef.value) {
+      if (scoreChartInstance) scoreChartInstance.destroy();
+      const hasData = scores.length > 0;
+      const labels = hasData
+        ? [...scores].reverse().map((s) => s.date)
+        : ['Sem dados'];
+      const data = hasData ? [...scores].reverse().map((s) => s.score) : [null];
 
-    if (storedLevel) {
-      level.value = storedLevel;
-    } else {
-      localStorage.setItem('level', level.value);
+      scoreChartInstance = new Chart(scoreChartRef.value, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            {
+              label: 'Score',
+              data,
+              borderColor: '#1d4ed8',
+              backgroundColor: 'rgba(29,78,216,0.08)',
+              pointBackgroundColor: '#1d4ed8',
+              pointRadius: hasData ? 4 : 0,
+              tension: 0.4,
+              fill: true,
+              spanGaps: false,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: {
+              min: 0,
+              max: 20,
+              ticks: { stepSize: 5, font: { size: 11 } },
+              grid: { color: '#f3f4f6' },
+            },
+            x: { ticks: { font: { size: 11 } }, grid: { display: false } },
+          },
+        },
+      });
     }
+  }
+
+  watch(
+    dashboardUser,
+    async (val) => {
+      if (val) {
+        await nextTick();
+        buildCharts();
+      }
+    },
+    { deep: true, immediate: true },
+  );
+
+  onMounted(async () => {
+    await auth.fetchUser();
+    const stored = localStorage.getItem('subject');
+    typeOfQuestion.value = stored || null;
   });
 </script>
 
 <template>
   <div class="dashboard-container">
-    <AlertComponent
-      v-if="showAlert"
-      :message="'Você está no plano Free. Faça upgrade para liberar todas as lições.'"
-      type="info"
-      :show-icon="true"
-      position="bottom"
-    >
-      <template #icon>
-        <ExclamationCircleOutlined />
-      </template>
-    </AlertComponent>
-
-    <div class="dashboard-card">
-      <div class="header">
+    <!-- Header -->
+    <div class="header-section">
+      <div class="header-text">
         <h1>👋 Olá, {{ dashboardUser?.name || dashboardUser?.email }}</h1>
         <p class="email">{{ dashboardUser?.email }}</p>
+        <span class="plan-badge" :class="dashboardUser?.plan">{{
+          planLabel
+        }}</span>
+      </div>
+      <img :src="aceImage" alt="Ace" class="ace-mascot" />
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <p class="stat-label">Membro desde</p>
+        <p class="stat-value small">
+          {{
+            dashboardUser?.created_at
+              ? new Date(dashboardUser.created_at).toLocaleDateString('pt-BR')
+              : '—'
+          }}
+        </p>
+      </div>
+      <div class="stat-card highlight">
+        <p class="stat-label">🔥 Streak</p>
+        <p class="stat-value">{{ streakMessage }}</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">Treinos esta semana</p>
+        <p class="stat-value">{{ dashboardUser?.weekly_count ?? 0 }}</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">Score médio</p>
+        <p class="stat-value" :style="{ color: scoreColor }">
+          {{ dashboardUser?.avg_score ?? 0 }}/20
+        </p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">Treinos hoje</p>
+        <p class="stat-value">{{ dashboardUser?.lessons_today ?? 0 }}</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">Restantes hoje</p>
+        <p class="stat-value">{{ remainingLabel }}</p>
+      </div>
+    </div>
+
+    <!-- Iniciar treino -->
+    <div class="section-card action-card">
+      <div class="action-content">
+        <div>
+          <h2 class="section-title" style="margin-bottom: 4px">
+            Simulação de entrevista
+          </h2>
+          <p class="action-sub">
+            Escolha sua área profissional e pratique agora
+          </p>
+        </div>
+        <div class="action-remaining" :class="{ 'no-remaining': !canTrain }">
+          {{ canTrain ? `${remainingLabel} restantes` : 'Limite atingido' }}
+        </div>
+      </div>
+      <div class="action-row">
+        <a-select
+          v-model:value="typeOfQuestion"
+          @change="onSubjectChange"
+          class="select"
+          placeholder="Selecione sua área"
+          :allow-clear="true"
+        >
+          <a-select-option value="technology">Tecnologia</a-select-option>
+          <a-select-option value="health">Saúde</a-select-option>
+          <a-select-option value="engineering">Engenharia</a-select-option>
+          <a-select-option value="finance">Finanças e Negócios</a-select-option>
+          <a-select-option value="logistics"
+            >Logística e Operações</a-select-option
+          >
+          <a-select-option value="marketing"
+            >Marketing e Vendas</a-select-option
+          >
+          <a-select-option value="law">Jurídico e RH</a-select-option>
+          <a-select-option value="education"
+            >Educação e Comunicação</a-select-option
+          >
+          <a-select-option value="other">Outra área</a-select-option>
+        </a-select>
+        <button
+          class="btn-train"
+          :disabled="!canTrain || !hasArea"
+          @click="goToTraining"
+        >
+          {{
+            !hasArea
+              ? '👆 Selecione uma área'
+              : canTrain
+              ? '🎯 Iniciar simulação'
+              : '🔒 Limite atingido'
+          }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Gráfico semanal -->
+    <div class="section-card">
+      <h2 class="section-title">Treinos esta semana</h2>
+      <div class="chart-wrap">
+        <canvas
+          ref="weeklyChartRef"
+          role="img"
+          aria-label="Treinos por dia nos últimos 7 dias"
+        ></canvas>
+      </div>
+    </div>
+
+    <!-- Streak calendário + Score chart -->
+    <div class="two-col">
+      <div class="section-card">
+        <h2 class="section-title">🔥 Atividade — 30 dias</h2>
+        <div class="calendar-grid">
+          <div
+            v-for="d in calendarDays"
+            :key="d.key"
+            class="cal-day"
+            :class="{ 'cal-active': d.active, 'cal-today': d.isToday }"
+            :title="d.key"
+          />
+        </div>
+        <div class="cal-legend">
+          <span class="legend-dot inactive"></span><span>Sem treino</span>
+          <span class="legend-dot active"></span><span>Treinou</span>
+        </div>
       </div>
 
-      <div class="cards">
-        <BaseCard>
-          <p class="label">Plano</p>
-          <h2>{{ dashboardUser?.plan.toUpperCase() }}</h2>
-        </BaseCard>
-
-        <BaseCard>
-          <p class="label">Membro desde</p>
-          <h2>
-            {{
-              new Date(dashboardUser?.created_at || '').toLocaleDateString(
-                'pt-BR',
-              )
-            }}
-          </h2>
-        </BaseCard>
-
-        <BaseCard>
-          <p class="label">Treinos realizados hoje</p>
-          <h2>{{ dashboardUser?.lessons_today || 0 }}</h2>
-        </BaseCard>
-
-        <BaseCard>
-          <p class="label">Treinos restantes</p>
-          <h2>
-            {{
-              dashboardUser?.remaining === null
-                ? 'Ilimitados'
-                : dashboardUser?.remaining
-            }}
-          </h2>
-        </BaseCard>
-
-        <BaseCard>
-          <p class="label">Tech</p>
-          <a-select
-            v-model:value="typeOfQuestion"
-            @change="onSubjectChange"
-            class="select"
-            placeholder="Selecione uma tecnologia"
-          >
-            <a-select-option value="opinion">Opinião</a-select-option>
-            <a-select-option value="behavioral">Comportamental</a-select-option>
-            <a-select-option value="react">React</a-select-option>
-            <a-select-option value="next">Next.js</a-select-option>
-            <a-select-option value="javascript">JavaScript</a-select-option>
-            <a-select-option value="typescript">TypeScript</a-select-option>
-            <a-select-option value="python">Python</a-select-option>
-            <a-select-option value="node">Node.js/Backend</a-select-option>
-            <a-select-option value="java">Java</a-select-option>
-            <a-select-option value="devops">DevOps</a-select-option>
-            <a-select-option value="architecture">Arquitetura</a-select-option>
-            <a-select-option value="php">PHP</a-select-option>
-            <a-select-option value="ruby">Ruby</a-select-option>
-            <a-select-option value="frontend">Frontend</a-select-option>
-          </a-select>
-        </BaseCard>
-
-        <BaseCard>
-          <p class="label">Senioridade</p>
-          <a-select
-            v-model:value="level"
-            @change="onLevelChange"
-            class="select"
-            placeholder="Selecione a senioridade"
-          >
-            <a-select-option value="junior">Júnior</a-select-option>
-            <a-select-option value="pleno">Pleno</a-select-option>
-            <a-select-option value="senior">Sênior</a-select-option>
-          </a-select>
-        </BaseCard>
+      <div class="section-card">
+        <h2 class="section-title">Evolução do score</h2>
+        <div class="chart-wrap">
+          <canvas
+            ref="scoreChartRef"
+            role="img"
+            aria-label="Evolução do score nas últimas sessões"
+          ></canvas>
+        </div>
       </div>
     </div>
   </div>
@@ -152,67 +343,233 @@
 
 <style scoped>
   .dashboard-container {
-    padding: 40px;
-    max-width: 1200px;
+    padding: 24px 20px;
+    max-width: 1100px;
     margin: 0 auto;
     width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    box-sizing: border-box;
   }
 
-  .dashboard-card {
+  /* Header */
+  .header-section {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     background: white;
     border-radius: 16px;
-    padding: 24px;
-    box-shadow:
-      0 1px 3px rgba(0, 0, 0, 0.1),
-      0 1px 2px rgba(0, 0, 0, 0.06);
+    padding: 20px 24px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   }
-
-  .header {
-    margin-bottom: 24px;
-    padding-bottom: 16px;
-    border-bottom: 1px solid #f0f0f0;
+  .header-text h1 {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 4px;
   }
-
-  .header h1 {
-    font-size: 24px;
-    margin-bottom: 8px;
-  }
-
   .email {
-    font-size: 14px;
+    font-size: 13px;
     color: #8c8c8c;
+    margin-bottom: 10px;
+  }
+  .plan-badge {
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .plan-badge.free {
+    background: #f3f4f6;
+    color: #6b7280;
+  }
+  .plan-badge.practice {
+    background: #dbeafe;
+    color: #1d4ed8;
+  }
+  .plan-badge.fluent {
+    background: #d1fae5;
+    color: #065f46;
+  }
+  .plan-badge.pro {
+    background: #d1fae5;
+    color: #065f46;
+  }
+  .ace-mascot {
+    width: 90px;
+    height: auto;
+    object-fit: contain;
   }
 
-  /* layout */
-  .cards {
+  /* Stats */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  @media (min-width: 768px) {
+    .stats-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+  .stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 14px 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  }
+  .stat-card.highlight {
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+  }
+  .stat-label {
+    font-size: 11px;
+    color: #9ca3af;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 6px;
+  }
+  .stat-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: #111;
+  }
+  .stat-value.small {
+    font-size: 15px;
+  }
+
+  /* Action card */
+  .action-card {
     display: flex;
     flex-direction: column;
     gap: 16px;
   }
-
-  .label {
+  .action-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .action-sub {
     font-size: 13px;
-    color: #8c8c8c;
-    margin-bottom: 8px;
-    font-weight: 500;
-    text-transform: uppercase;
+    color: #9ca3af;
+    margin: 0;
+  }
+  .action-remaining {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 20px;
+    background: #dbeafe;
+    color: #1d4ed8;
+  }
+  .action-remaining.no-remaining {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+  .action-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .select {
+    flex: 1;
+    min-width: 180px;
+  }
+  .btn-train {
+    padding: 10px 24px;
+    background: #1d4ed8;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s;
+  }
+  .btn-train:hover {
+    background: #1e40af;
+  }
+  .btn-train:disabled {
+    background: #e5e7eb;
+    color: #9ca3af;
+    cursor: not-allowed;
   }
 
-  /* responsive */
+  /* Section card */
+  .section-card {
+    background: white;
+    border-radius: 16px;
+    padding: 20px 24px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  }
+  .section-title {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: #111;
+  }
+
+  /* Charts */
+  .chart-wrap {
+    position: relative;
+    height: 180px;
+    width: 100%;
+  }
+
+  /* Two col */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
   @media (min-width: 768px) {
-    .cards {
-      flex-direction: row;
-      flex-wrap: wrap;
-    }
-
-    .cards > * {
-      flex: 1 1 calc(50% - 8px);
+    .two-col {
+      grid-template-columns: 1fr 1fr;
     }
   }
 
-  @media (min-width: 1024px) {
-    .cards > * {
-      flex: 1 1 calc(33.33% - 10px);
-    }
+  /* Calendário */
+  .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 4px;
+    margin-bottom: 10px;
+  }
+  .cal-day {
+    aspect-ratio: 1;
+    border-radius: 4px;
+    background: #f3f4f6;
+  }
+  .cal-day.cal-active {
+    background: #1d4ed8;
+  }
+  .cal-day.cal-today {
+    outline: 2px solid #1d4ed8;
+    outline-offset: 1px;
+  }
+  .cal-legend {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: #9ca3af;
+  }
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    display: inline-block;
+  }
+  .legend-dot.inactive {
+    background: #f3f4f6;
+  }
+  .legend-dot.active {
+    background: #1d4ed8;
   }
 </style>
