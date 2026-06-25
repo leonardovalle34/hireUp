@@ -8,6 +8,7 @@
   import { storeToRefs } from 'pinia';
   import { useRouter } from 'vue-router';
   import { Chart, registerables } from 'chart.js';
+
   const aceWaving = new URL('../assets/ace/ace-waving.png', import.meta.url)
     .href;
   const aceThinking = new URL('../assets/ace/ace-thinking.png', import.meta.url)
@@ -18,7 +19,6 @@
   const auth = useAuthStore();
   const { dashboardUser } = storeToRefs(auth);
   const router = useRouter();
-  const typeOfQuestion = ref<string | null>(null);
   const weeklyChartRef = ref<HTMLCanvasElement | null>(null);
   const scoreChartRef = ref<HTMLCanvasElement | null>(null);
   let weeklyChartInstance: Chart | null = null;
@@ -49,14 +49,13 @@
 
   const aceImage = computed(() => {
     const s = dashboardUser.value?.streak ?? 0;
-    if (s === 0) return aceThinking;
-    return aceWaving;
+    return s === 0 ? aceThinking : aceWaving;
   });
 
   const remainingLabel = computed(() => {
     const r = dashboardUser.value?.remaining;
     if (r === null || r === undefined) return '∞';
-    return r;
+    return String(r);
   });
 
   const canTrain = computed(() => {
@@ -64,7 +63,6 @@
     return r === null || r === undefined || r > 0;
   });
 
-  const hasArea = computed(() => !!typeOfQuestion.value);
   const calendarDays = computed(() => {
     const days = [];
     const activeDays = new Set(dashboardUser.value?.active_days ?? []);
@@ -77,18 +75,8 @@
     return days;
   });
 
-  const onSubjectChange = (value: string) => {
-    typeOfQuestion.value = value ?? null;
-    if (value) {
-      localStorage.setItem('subject', value);
-    } else {
-      localStorage.removeItem('subject');
-    }
-  };
-
-  const goToTraining = () => {
-    router.push('/interview');
-  };
+  const goToTraining = () => router.push('/interview');
+  const goToPricing = () => router.push('/pricing');
 
   function buildCharts() {
     const weekly = dashboardUser.value?.weekly_chart ?? [];
@@ -186,8 +174,6 @@
 
   onMounted(async () => {
     await auth.fetchUser();
-    const stored = localStorage.getItem('subject');
-    typeOfQuestion.value = stored || null;
   });
 </script>
 
@@ -241,59 +227,28 @@
       </div>
     </div>
 
-    <!-- Iniciar treino -->
+    <!-- Simulação de entrevista -->
     <div class="section-card action-card">
-      <div class="action-content">
+      <div class="action-header">
         <div>
-          <h2 class="section-title" style="margin-bottom: 4px">
-            Simulação de entrevista
-          </h2>
+          <h2 class="section-title">Simulação de entrevista</h2>
           <p class="action-sub">
-            Escolha sua área profissional e pratique agora
+            O Ace conduz uma entrevista realista em inglês baseada na sua área
+            profissional
           </p>
         </div>
         <div class="action-remaining" :class="{ 'no-remaining': !canTrain }">
           {{ canTrain ? `${remainingLabel} restantes` : 'Limite atingido' }}
         </div>
       </div>
-      <div class="action-row">
-        <a-select
-          v-model:value="typeOfQuestion"
-          @change="onSubjectChange"
-          class="select"
-          placeholder="Selecione sua área"
-          :allow-clear="true"
-        >
-          <a-select-option value="technology">Tecnologia</a-select-option>
-          <a-select-option value="health">Saúde</a-select-option>
-          <a-select-option value="engineering">Engenharia</a-select-option>
-          <a-select-option value="finance">Finanças e Negócios</a-select-option>
-          <a-select-option value="logistics"
-            >Logística e Operações</a-select-option
-          >
-          <a-select-option value="marketing"
-            >Marketing e Vendas</a-select-option
-          >
-          <a-select-option value="law">Jurídico e RH</a-select-option>
-          <a-select-option value="education"
-            >Educação e Comunicação</a-select-option
-          >
-          <a-select-option value="other">Outra área</a-select-option>
-        </a-select>
-        <button
-          class="btn-train"
-          :disabled="!canTrain || !hasArea"
-          @click="goToTraining"
-        >
-          {{
-            !hasArea
-              ? '👆 Selecione uma área'
-              : canTrain
-              ? '🎯 Iniciar simulação'
-              : '🔒 Limite atingido'
-          }}
-        </button>
-      </div>
+
+      <button class="btn-train" :disabled="!canTrain" @click="goToTraining">
+        {{ canTrain ? '🎯 Iniciar simulação' : '🔒 Limite atingido' }}
+      </button>
+
+      <button v-if="!canTrain" class="btn-upgrade" @click="goToPricing">
+        ⚡ Fazer upgrade para mais simulações
+      </button>
     </div>
 
     <!-- Gráfico semanal -->
@@ -352,59 +307,31 @@
     gap: 20px;
     box-sizing: border-box;
   }
-
-  /* Header */
   .header-section {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: white;
+    background: var(--card-bg);
     border-radius: 16px;
     padding: 20px 24px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    box-shadow: var(--card-shadow);
   }
   .header-text h1 {
     font-size: 20px;
     font-weight: 600;
     margin-bottom: 4px;
+    color: var(--text-primary);
   }
   .email {
     font-size: 13px;
-    color: #8c8c8c;
+    color: var(--text-secondary);
     margin-bottom: 10px;
-  }
-  .plan-badge {
-    display: inline-block;
-    padding: 3px 12px;
-    border-radius: 20px;
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-  .plan-badge.free {
-    background: #f3f4f6;
-    color: #6b7280;
-  }
-  .plan-badge.practice {
-    background: #dbeafe;
-    color: #1d4ed8;
-  }
-  .plan-badge.fluent {
-    background: #d1fae5;
-    color: #065f46;
-  }
-  .plan-badge.pro {
-    background: #d1fae5;
-    color: #065f46;
   }
   .ace-mascot {
     width: 90px;
     height: auto;
     object-fit: contain;
   }
-
-  /* Stats */
   .stats-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -416,10 +343,10 @@
     }
   }
   .stat-card {
-    background: white;
+    background: var(--card-bg);
     border-radius: 12px;
     padding: 14px 16px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    box-shadow: var(--card-shadow);
   }
   .stat-card.highlight {
     background: #fff7ed;
@@ -427,7 +354,7 @@
   }
   .stat-label {
     font-size: 11px;
-    color: #9ca3af;
+    color: var(--text-tertiary);
     font-weight: 500;
     text-transform: uppercase;
     letter-spacing: 0.4px;
@@ -436,26 +363,37 @@
   .stat-value {
     font-size: 18px;
     font-weight: 700;
-    color: #111;
+    color: var(--text-primary);
   }
   .stat-value.small {
     font-size: 15px;
   }
-
-  /* Action card */
+  .section-card {
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 20px 24px;
+    box-shadow: var(--card-shadow);
+  }
+  .section-title {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+  }
   .action-card {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 14px;
   }
-  .action-content {
+  .action-header {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
+    gap: 12px;
   }
   .action-sub {
     font-size: 13px;
-    color: #9ca3af;
+    color: var(--text-tertiary);
     margin: 0;
   }
   .action-remaining {
@@ -465,64 +403,53 @@
     border-radius: 20px;
     background: #dbeafe;
     color: #1d4ed8;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
   .action-remaining.no-remaining {
     background: #fee2e2;
     color: #991b1b;
   }
-  .action-row {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-    flex-wrap: wrap;
-  }
-  .select {
-    flex: 1;
-    min-width: 180px;
-  }
   .btn-train {
-    padding: 10px 24px;
-    background: #1d4ed8;
+    width: 100%;
+    padding: 14px;
+    background: var(--accent);
     color: white;
     border: none;
-    border-radius: 10px;
+    border-radius: 12px;
     font-size: 15px;
     font-weight: 600;
     cursor: pointer;
-    white-space: nowrap;
     transition: background 0.2s;
   }
   .btn-train:hover {
-    background: #1e40af;
+    background: var(--accent-hover);
   }
   .btn-train:disabled {
-    background: #e5e7eb;
-    color: #9ca3af;
+    background: var(--border);
+    color: var(--text-tertiary);
     cursor: not-allowed;
   }
-
-  /* Section card */
-  .section-card {
-    background: white;
-    border-radius: 16px;
-    padding: 20px 24px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-  }
-  .section-title {
-    font-size: 15px;
+  .btn-upgrade {
+    width: 100%;
+    padding: 11px;
+    background: transparent;
+    color: var(--success);
+    border: 1px solid var(--success);
+    border-radius: 12px;
+    font-size: 14px;
     font-weight: 600;
-    margin-bottom: 16px;
-    color: #111;
+    cursor: pointer;
+    transition: all 0.2s;
   }
-
-  /* Charts */
+  .btn-upgrade:hover {
+    background: var(--bg-secondary);
+  }
   .chart-wrap {
     position: relative;
     height: 180px;
     width: 100%;
   }
-
-  /* Two col */
   .two-col {
     display: grid;
     grid-template-columns: 1fr;
@@ -533,8 +460,6 @@
       grid-template-columns: 1fr 1fr;
     }
   }
-
-  /* Calendário */
   .calendar-grid {
     display: grid;
     grid-template-columns: repeat(10, 1fr);
@@ -544,13 +469,13 @@
   .cal-day {
     aspect-ratio: 1;
     border-radius: 4px;
-    background: #f3f4f6;
+    background: var(--bg-secondary);
   }
   .cal-day.cal-active {
-    background: #1d4ed8;
+    background: var(--accent);
   }
   .cal-day.cal-today {
-    outline: 2px solid #1d4ed8;
+    outline: 2px solid var(--accent);
     outline-offset: 1px;
   }
   .cal-legend {
@@ -558,7 +483,7 @@
     align-items: center;
     gap: 6px;
     font-size: 11px;
-    color: #9ca3af;
+    color: var(--text-tertiary);
   }
   .legend-dot {
     width: 10px;
@@ -567,9 +492,9 @@
     display: inline-block;
   }
   .legend-dot.inactive {
-    background: #f3f4f6;
+    background: var(--bg-secondary);
   }
   .legend-dot.active {
-    background: #1d4ed8;
+    background: var(--accent);
   }
 </style>

@@ -40,6 +40,10 @@ const router = createRouter({
         { path: 'pricing', component: PricingView },
         { path: 'support', component: SupportView },
         { path: 'about', component: AboutView },
+        {
+          path: 'settings',
+          component: () => import('@/views/SettingsView.vue'),
+        },
       ],
     },
   ],

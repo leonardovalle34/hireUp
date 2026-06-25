@@ -24,6 +24,7 @@
   const isLoading = ref(false);
   const isRecording = ref(false);
   const isSpeaking = ref(false);
+  const questionReady = ref(false); // iOS: pergunta pronta para ouvir
   const feedback = ref<any>(null);
   const errorMsg = ref<string | null>(null);
   const audioBlob = ref<Blob | null>(null);
@@ -39,32 +40,60 @@
   function speakNoBlock(text: string) {
     if (speakTimer) clearTimeout(speakTimer);
     window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'en-US';
-    utterance.rate = 0.95;
-    utterance.onstart = () => {
-      isSpeaking.value = true;
-    };
-    utterance.onend = () => {
-      isSpeaking.value = false;
-    };
-    utterance.onerror = () => {
-      isSpeaking.value = false;
-    };
-    window.speechSynthesis.speak(utterance);
-    speakTimer = setTimeout(() => {
-      isSpeaking.value = false;
-    }, 20000);
+    questionReady.value = true;
+
+    try {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'en-US';
+      utterance.rate = 0.95;
+      utterance.onstart = () => {
+        isSpeaking.value = true;
+        questionReady.value = false;
+      };
+      utterance.onend = () => {
+        isSpeaking.value = false;
+      };
+      utterance.onerror = () => {
+        isSpeaking.value = false;
+      };
+      window.speechSynthesis.speak(utterance);
+      speakTimer = setTimeout(() => {
+        isSpeaking.value = false;
+      }, 20000);
+    } catch {
+      // iOS bloqueou autoplay — usuário usa o botão
+    }
   }
 
   async function startInterview() {
-    stage.value = 'interview';
-    turn.value = 0;
-    history.value = [];
-    audioBlob.value = null;
-    audioUrl.value = null;
-    hasRecorded.value = false;
-    await callApi(null);
+    isLoading.value = true;
+    errorMsg.value = null;
+
+    try {
+      const { data: canStart, error } = await (
+        await import('@/lib/supabase')
+      ).supabase.rpc('can_user_take_lesson', { uid: user.value?.id });
+
+      if (error) throw error;
+
+      if (!canStart) {
+        router.push('/pricing');
+        return;
+      }
+
+      stage.value = 'interview';
+      turn.value = 0;
+      history.value = [];
+      audioBlob.value = null;
+      audioUrl.value = null;
+      hasRecorded.value = false;
+      questionReady.value = false;
+      isLoading.value = false;
+      await callApi(null);
+    } catch (err: any) {
+      errorMsg.value = err.message;
+      isLoading.value = false;
+    }
   }
 
   async function callApi(audio: Blob | null) {
@@ -73,6 +102,7 @@
     audioBlob.value = null;
     audioUrl.value = null;
     hasRecorded.value = false;
+    questionReady.value = false;
 
     try {
       const {
@@ -81,7 +111,26 @@
       if (!session?.access_token) throw new Error('Não autenticado');
 
       const form = new FormData();
-      if (audio) form.append('file', audio, 'recording.webm');
+      if (audio) {
+        // Detecta extensão correta para iOS (mp4) e Android (webm)
+        const mimeType = audio.type || 'audio/webm';
+        let extension = 'webm';
+        if (
+          mimeType.includes('mp4') ||
+          mimeType.includes('m4a') ||
+          mimeType.includes('aac')
+        ) {
+          extension = 'mp4';
+        } else if (mimeType.includes('ogg')) {
+          extension = 'ogg';
+        } else if (mimeType.includes('wav')) {
+          extension = 'wav';
+        } else if (mimeType.includes('mpeg') || mimeType.includes('mp3')) {
+          extension = 'mp3';
+        }
+        form.append('file', audio, `recording.${extension}`);
+      }
+
       form.append('area', area.value);
       form.append('turn', String(turn.value + 1));
       form.append('history', JSON.stringify(history.value));
@@ -197,6 +246,7 @@
     audioUrl.value = null;
     hasRecorded.value = false;
     isSpeaking.value = false;
+    questionReady.value = false;
     window.speechSynthesis.cancel();
   }
 
@@ -258,8 +308,15 @@
       <!-- Pergunta -->
       <div v-if="!isLoading && currentQuestion" class="question-box">
         <p>{{ currentQuestion }}</p>
-        <button class="btn-repeat" @click="speakNoBlock(currentQuestion)">
-          🔊 Ouvir novamente
+        <button
+          class="btn-listen"
+          :class="{ 'btn-listen-pulse': questionReady }"
+          @click="speakNoBlock(currentQuestion)"
+        >
+          🔊
+          {{
+            questionReady ? 'Toque para ouvir a pergunta' : 'Ouvir novamente'
+          }}
         </button>
       </div>
 
@@ -268,7 +325,6 @@
 
       <!-- Controles -->
       <div v-if="!isLoading" class="controls">
-        <!-- Gravar -->
         <button
           v-if="!isRecording && !hasRecorded"
           class="btn-green"
@@ -277,12 +333,10 @@
           🎤 Gravar Resposta
         </button>
 
-        <!-- Parar -->
         <button v-if="isRecording" class="btn-red" @click="stopRecording">
           ⏹️ Parar Gravação
         </button>
 
-        <!-- Player + ações pós gravação -->
         <div v-if="hasRecorded && !isRecording" class="recorded-wrap">
           <audio
             v-if="audioUrl"
@@ -365,7 +419,7 @@
     justify-content: center;
   }
   .iv-card {
-    background: white;
+    background: var(--card-bg);
     border-radius: 20px;
     padding: 28px 20px;
     width: 100%;
@@ -373,23 +427,23 @@
     flex-direction: column;
     align-items: center;
     gap: 14px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    box-shadow: var(--card-shadow);
   }
   h1 {
     font-size: 20px;
     font-weight: 700;
-    color: #111;
+    color: var(--text-primary);
     text-align: center;
     margin: 0;
   }
   .subtitle {
     font-size: 13px;
-    color: #6b7280;
+    color: var(--text-secondary);
     margin: 0;
   }
   .desc {
     font-size: 13px;
-    color: #374151;
+    color: var(--text-secondary);
     text-align: center;
     line-height: 1.6;
     margin: 0;
@@ -401,11 +455,11 @@
     justify-content: center;
   }
   .tags span {
-    background: #f3f4f6;
+    background: var(--bg-secondary);
     padding: 5px 12px;
     border-radius: 20px;
     font-size: 12px;
-    color: #374151;
+    color: var(--text-secondary);
   }
   .ace {
     width: 90px;
@@ -425,19 +479,19 @@
   .progress-bar {
     width: 100%;
     height: 5px;
-    background: #e5e7eb;
+    background: var(--border);
     border-radius: 10px;
     overflow: hidden;
   }
   .progress-fill {
     height: 100%;
-    background: #1d4ed8;
+    background: var(--accent);
     border-radius: 10px;
     transition: width 0.4s;
   }
   .progress-label {
     font-size: 11px;
-    color: #9ca3af;
+    color: var(--text-tertiary);
     align-self: flex-end;
     margin: 0;
   }
@@ -445,14 +499,14 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    color: #6b7280;
+    color: var(--text-secondary);
     font-size: 14px;
   }
   .spinner {
     width: 24px;
     height: 24px;
-    border: 2.5px solid #e5e7eb;
-    border-top-color: #1d4ed8;
+    border: 2.5px solid var(--border);
+    border-top-color: var(--accent);
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
     flex-shrink: 0;
@@ -463,8 +517,8 @@
     }
   }
   .question-box {
-    background: #f0f4ff;
-    border-left: 4px solid #1d4ed8;
+    background: var(--bg-secondary);
+    border-left: 4px solid var(--accent);
     border-radius: 8px;
     padding: 14px 18px;
     width: 100%;
@@ -474,27 +528,42 @@
   }
   .question-box p {
     font-size: 15px;
-    color: #1e3a8a;
+    color: var(--text-primary);
     line-height: 1.6;
     font-weight: 500;
     margin: 0;
   }
-  .btn-repeat {
+  .btn-listen {
     background: none;
-    border: 1px solid #bfdbfe;
-    color: #1d4ed8;
-    padding: 5px 12px;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    padding: 8px 16px;
     border-radius: 8px;
-    font-size: 12px;
+    font-size: 13px;
     cursor: pointer;
     align-self: flex-start;
+    transition: all 0.2s;
   }
-  .btn-repeat:hover {
-    background: #eff6ff;
+  .btn-listen:hover {
+    background: var(--bg-secondary);
+  }
+  .btn-listen-pulse {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+    animation: attention 1s ease-in-out infinite alternate;
+  }
+  @keyframes attention {
+    from {
+      transform: scale(1);
+    }
+    to {
+      transform: scale(1.03);
+    }
   }
   .error-box {
     background: #fee2e2;
-    color: #991b1b;
+    color: var(--danger);
     padding: 10px 14px;
     border-radius: 8px;
     font-size: 13px;
@@ -520,7 +589,7 @@
   .btn-blue {
     width: 100%;
     padding: 13px;
-    background: #1d4ed8;
+    background: var(--accent);
     color: white;
     border: none;
     border-radius: 12px;
@@ -529,17 +598,17 @@
     cursor: pointer;
   }
   .btn-blue:hover {
-    background: #1e40af;
+    background: var(--accent-hover);
   }
   .btn-blue:disabled {
-    background: #e5e7eb;
-    color: #9ca3af;
+    background: var(--border);
+    color: var(--text-tertiary);
     cursor: not-allowed;
   }
   .btn-green {
     width: 100%;
     padding: 13px;
-    background: #059669;
+    background: var(--success);
     color: white;
     border: none;
     border-radius: 12px;
@@ -548,12 +617,12 @@
     cursor: pointer;
   }
   .btn-green:hover {
-    background: #047857;
+    opacity: 0.9;
   }
   .btn-red {
     width: 100%;
     padding: 13px;
-    background: #dc2626;
+    background: var(--danger);
     color: white;
     border: none;
     border-radius: 12px;
@@ -574,14 +643,14 @@
     width: 100%;
     padding: 11px;
     background: transparent;
-    color: #6b7280;
-    border: 1px solid #e5e7eb;
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
     border-radius: 12px;
     font-size: 14px;
     cursor: pointer;
   }
   .btn-ghost:hover {
-    background: #f9fafb;
+    background: var(--bg-secondary);
   }
   .feedback-wrap {
     display: flex;
@@ -592,12 +661,12 @@
   .score-card {
     text-align: center;
     padding: 20px;
-    background: #f9fafb;
+    background: var(--bg-secondary);
     border-radius: 12px;
   }
   .score-label {
     font-size: 12px;
-    color: #9ca3af;
+    color: var(--text-tertiary);
     margin-bottom: 6px;
   }
   .score-value {
@@ -605,16 +674,16 @@
     font-weight: 800;
   }
   .score-value.green {
-    color: #16a34a;
+    color: var(--success);
   }
   .score-value.yellow {
-    color: #ca8a04;
+    color: var(--warning);
   }
   .score-value.red {
-    color: #dc2626;
+    color: var(--danger);
   }
   .fb-section {
-    background: #f9fafb;
+    background: var(--bg-secondary);
     border-radius: 12px;
     padding: 14px;
     width: 100%;
@@ -623,11 +692,11 @@
     font-size: 13px;
     font-weight: 600;
     margin-bottom: 8px;
-    color: #111;
+    color: var(--text-primary);
   }
   .fb-section p {
     font-size: 13px;
-    color: #374151;
+    color: var(--text-secondary);
     line-height: 1.6;
     margin: 0;
   }
@@ -639,7 +708,7 @@
   }
   .fb-section li {
     font-size: 13px;
-    color: #374151;
+    color: var(--text-secondary);
     line-height: 1.5;
   }
 </style>
