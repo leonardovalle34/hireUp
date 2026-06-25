@@ -1,164 +1,170 @@
 <script lang="ts">
-  export default {
-    name: 'AboutView',
-  };
+  export default { name: 'AboutView' };
 </script>
 
 <script setup lang="ts">
-  import BaseCard from '@/components/UI/BaseCard.vue';
-  import { RocketOutlined } from '@ant-design/icons-vue';
+  import { useRouter } from 'vue-router';
+  const router = useRouter();
 </script>
 
 <template>
-  <div class="container">
-    <div class="main-card">
-      <!-- Header -->
-      <div class="header">
-        <RocketOutlined class="icon" />
-        <h1>Preparando Devs para o Sucesso</h1>
+  <div class="about-container">
+    <div class="hero">
+      <img src="@/assets/ace/ace-waving.png" alt="Ace" class="ace" />
+      <h1>Preparando profissionais para o sucesso</h1>
+      <p>
+        Plataforma de inglês profissional com IA para adultos brasileiros que
+        querem se destacar no mercado de trabalho.
+      </p>
+    </div>
+
+    <div class="cards-grid">
+      <div class="card">
+        <h2>🎯 Nossa Missão</h2>
         <p>
-          Plataforma dedicada a transformar desenvolvedores em profissionais
-          prontos para qualquer entrevista técnica.
+          Democratizar o acesso ao inglês profissional, permitindo que qualquer
+          adulto brasileiro pratique diariamente com um tutor de IA
+          personalizado.
         </p>
+        <ul>
+          <li>Simulações reais de entrevistas</li>
+          <li>Feedback detalhado com IA</li>
+          <li>Todas as áreas profissionais</li>
+        </ul>
       </div>
 
-      <!-- Cards -->
-      <div class="cards">
-        <BaseCard title="Nossa Missão">
-          <p>
-            Ajudar desenvolvedores a se prepararem para entrevistas técnicas com
-            simulações realistas e feedback imediato.
-          </p>
+      <div class="card">
+        <h2>💡 Nossos Valores</h2>
+        <ul>
+          <li>
+            <strong>Prática real:</strong> aprender falando, não decorando
+          </li>
+          <li>
+            <strong>Contexto profissional:</strong> inglês aplicado à sua área
+          </li>
+          <li>
+            <strong>Acessibilidade:</strong> preço justo para o mercado
+            brasileiro
+          </li>
+        </ul>
+      </div>
 
-          <ul class="list">
-            <li>Simulações reais de entrevistas</li>
-            <li>Feedback detalhado</li>
-            <li>Português e inglês</li>
-          </ul>
-        </BaseCard>
+      <div class="card">
+        <h2>🎤 Inglês na Prática</h2>
+        <p>
+          Treine entrevistas em inglês com o Ace, nosso entrevistador de IA, e
+          ganhe confiança para oportunidades nacionais e internacionais.
+        </p>
+        <ul>
+          <li>Entrevistas por voz com IA</li>
+          <li>Feedback de vocabulário e fluência</li>
+          <li>Todas as áreas: tech, saúde, finanças e mais</li>
+        </ul>
+      </div>
 
-        <BaseCard title="Nossos Valores">
-          <ul class="list">
-            <li>
-              <strong>Excelência Técnica:</strong> foco no que o mercado pede
-            </li>
-            <li>
-              <strong>Inglês Profissional:</strong> prática real de entrevistas
-            </li>
-            <li><strong>Comunidade:</strong> crescer junto com outros devs</li>
-          </ul>
-        </BaseCard>
-
-        <BaseCard title="Inglês na Prática" center>
-          <p>
-            Treine entrevistas em inglês e ganhe confiança para oportunidades
-            internacionais.
-          </p>
-
-          <ul class="list">
-            <li>Perguntas técnicas em inglês</li>
-            <li>Feedback de vocabulário</li>
-            <li>Prática de respostas</li>
-          </ul>
-        </BaseCard>
-
-        <BaseCard title="Quem Faz Acontecer" center>
-          <p><strong>Equipe Full Stack</strong></p>
-          <p>Profissionais apaixonados por tecnologia e educação</p>
-        </BaseCard>
-
-        <BaseCard center>
-          <h2>Pronto para começar?</h2>
-          <p>
-            Junte-se a desenvolvedores que já estão se preparando para suas
-            próximas entrevistas.
-          </p>
-
-          <a-button type="primary" @click="$router.push('/lessons')">
-            Começar Agora
-          </a-button>
-        </BaseCard>
+      <div class="card">
+        <h2>🚀 Pronto para começar?</h2>
+        <p>
+          Junte-se a profissionais que já estão praticando inglês diariamente
+          com o HireUp.
+        </p>
+        <button class="btn-start" @click="router.push('/interview')">
+          Iniciar simulação agora
+        </button>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-  .container {
-    padding: 40px;
-    max-width: 1200px;
+  .about-container {
+    max-width: 900px;
     margin: 0 auto;
-  }
-
-  .main-card {
-    background: white;
-    border-radius: 16px;
-    padding: 24px;
-    box-shadow:
-      0 1px 3px rgba(0, 0, 0, 0.1),
-      0 1px 2px rgba(0, 0, 0, 0.06);
-  }
-
-  .header {
-    text-align: center;
-    margin-bottom: 24px;
-  }
-
-  .icon {
-    font-size: 40px;
-    color: #001633;
-    margin-bottom: 12px;
-  }
-
-  .header h1 {
-    font-size: 24px;
-    margin-bottom: 8px;
-  }
-
-  .header p {
-    font-size: 14px;
-    color: #8c8c8c;
-  }
-
-  /* Cards layout */
-  .cards {
+    padding: 24px 20px 80px;
     display: flex;
     flex-direction: column;
+    gap: 24px;
+  }
+  .hero {
+    background: var(--card-bg);
+    border-radius: 20px;
+    padding: 32px 24px;
+    box-shadow: var(--card-shadow);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+  .ace {
+    width: 80px;
+    height: auto;
+  }
+  .hero h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+  .hero p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    max-width: 500px;
+  }
+  .cards-grid {
+    display: grid;
+    grid-template-columns: 1fr;
     gap: 16px;
   }
-
-  /* List padrão */
-  .list {
-    margin-top: 10px;
-    padding-left: 16px;
-  }
-
-  .list li {
-    margin-bottom: 6px;
-    font-size: 14px;
-    color: #4a5568;
-  }
-
-  /* Tablet */
   @media (min-width: 768px) {
-    .cards {
-      flex-direction: row;
-      flex-wrap: wrap;
-    }
-
-    .cards > * {
-      flex: 1 1 calc(50% - 8px);
+    .cards-grid {
+      grid-template-columns: 1fr 1fr;
     }
   }
-
-  /* Desktop */
-  @media (min-width: 1024px) {
-    .cards > * {
-      flex: 1 1 calc(33.333% - 10px);
-    }
-
-    .header h1 {
-      font-size: 28px;
-    }
+  .card {
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 20px 24px;
+    box-shadow: var(--card-shadow);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .card h2 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+  .card p {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin: 0;
+  }
+  .card ul {
+    padding-left: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .card li {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+  .btn-start {
+    width: 100%;
+    padding: 13px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 4px;
+  }
+  .btn-start:hover {
+    background: var(--accent-hover);
   }
 </style>
