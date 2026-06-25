@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SupaSec Security Audit Report</title>
+    <style>
+        :root {
+            --color-bg: #f8fafc;
+            --color-card: #ffffff;
+            --color-text: #1e293b;
+            --color-text-secondary: #64748b;
+            --color-border: #e2e8f0;
+            --color-primary: #3b82f6;
+            --color-primary-light: #eff6ff;
+            --color-success: #22c55e;
+            --color-warning: #f59e0b;
+            --color-danger: #ef4444;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --radius-sm: 6px;
+            --radius: 12px;
+            --radius-lg: 16px;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--color-bg);
+            min-height: 100vh;
+            color: var(--color-text);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+        
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            padding: 32px;
+            border-radius: var(--radius-lg);
+            margin-bottom: 24px;
+            box-shadow: var(--shadow-lg);
+            color: white;
+        }
+        
+        .header-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+        
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .logo {
+            width: 48px;
+            height: 48px;
+            background: rgba(255,255,255,0.2);
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 700;
+            backdrop-filter: blur(10px);
+        }
+        
+        .brand-text h1 {
+            font-size: 24px;
+            font-weight: 700;
+            margin: 0;
+        }
+        
+        .brand-text p {
+            font-size: 13px;
+            opacity: 0.9;
+            margin: 0;
+        }
+        
+        .report-meta {
+            text-align: right;
+        }
+        
+        .report-id {
+            font-size: 12px;
+            opacity: 0.8;
+            font-family: monospace;
+        }
+        
+        .report-date {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+        
+        /* Grade Section */
+        .grade-section {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+            padding: 24px;
+            background: rgba(255,255,255,0.1);
+            border-radius: var(--radius);
+            backdrop-filter: blur(10px);
+        }
+        
+        .grade-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #eab308;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            position: relative;
+        }
+        
+        .grade-circle::before {
+            content: '';
+            position: absolute;
+            inset: 4px;
+            border-radius: 50%;
+            border: 3px solid rgba(255,255,255,0.3);
+        }
+        
+        .grade-letter {
+            font-size: 56px;
+            font-weight: 800;
+            line-height: 1;
+        }
+        
+        .grade-score {
+            font-size: 14px;
+            font-weight: 600;
+            opacity: 0.9;
+        }
+        
+        .grade-info {
+            flex: 1;
+        }
+        
+        .grade-info h2 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .grade-info p {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 16px;
+        }
+        
+        .security-meter {
+            height: 8px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .security-meter-fill {
+            height: 100%;
+            background: white;
+            border-radius: 4px;
+            transition: width 1s ease;
+            width: 75%;
+        }
+        
+        .security-meter-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 4px;
+            font-size: 11px;
+            opacity: 0.8;
+        }
+        
+        /* Target Info Card */
+        .target-card {
+            background: var(--color-card);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .target-card h3 {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--color-text-secondary);
+            margin-bottom: 8px;
+        }
+        
+        .target-url {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--color-primary);
+            word-break: break-all;
+        }
+        
+        .target-meta {
+            display: flex;
+            gap: 24px;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--color-border);
+        }
+        
+        .target-meta-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .target-meta-item span:first-child {
+            font-size: 11px;
+            color: var(--color-text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .target-meta-item span:last-child {
+            font-size: 13px;
+            font-weight: 500;
+        }
+        
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .stat-card {
+            background: var(--color-card);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius);
+            padding: 20px;
+            text-align: center;
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+        
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px;
+            font-size: 20px;
+        }
+        
+        .stat-icon.critical { background: #fef2f2; }
+        .stat-icon.high { background: #fffbeb; }
+        .stat-icon.medium { background: #fefce8; }
+        .stat-icon.low { background: #eff6ff; }
+        
+        .stat-value {
+            font-size: 36px;
+            font-weight: 700;
+            line-height: 1;
+            margin-bottom: 4px;
+        }
+        
+        .stat-value.critical { color: #dc2626; }
+        .stat-value.high { color: #d97706; }
+        .stat-value.medium { color: #a16207; }
+        .stat-value.low { color: #2563eb; }
+        
+        .stat-label {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--color-text-secondary);
+        }
+        
+        /* Category Scores */
+        .category-section {
+            background: var(--color-card);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius);
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .category-section h2 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+        }
+        
+        .category-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px;
+            background: #f8fafc;
+            border-radius: var(--radius-sm);
+        }
+        
+        .category-grade {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+        
+        .category-info {
+            flex: 1;
+        }
+        
+        .category-name {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            text-transform: capitalize;
+        }
+        
+        .category-bar {
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        
+        .category-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 1s ease;
+        }
+        
+        .category-score {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+            margin-left: 8px;
+        }
+        
+        /* Findings Section */
+        .findings-section {
+            margin-bottom: 24px;
+        }
+        
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        
+        .section-header h2 {
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .section-header p {
+            font-size: 14px;
+            color: var(--color-text-secondary);
+        }
+        
+        .finding-card {
+            background: var(--color-card);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius);
+            margin-bottom: 16px;
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .finding-header {
+            padding: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            transition: background 0.2s;
+        }
+        
+        .finding-header:hover {
+            background: #f8fafc;
+        }
+        
+        .finding-severity {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+        
+        .finding-severity.critical { background: #fef2f2; }
+        .finding-severity.high { background: #fffbeb; }
+        .finding-severity.medium { background: #fefce8; }
+        .finding-severity.low { background: #eff6ff; }
+        
+        .finding-title-section {
+            flex: 1;
+        }
+        
+        .finding-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .finding-id {
+            font-size: 12px;
+            color: var(--color-text-secondary);
+            font-family: monospace;
+        }
+        
+        .finding-preview {
+            font-size: 14px;
+            color: var(--color-text-secondary);
+            line-height: 1.5;
+        }
+        
+        .finding-meta {
+            display: flex;
+            gap: 12px;
+            margin-top: 8px;
+        }
+        
+        .finding-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .finding-badge.critical { background: #fef2f2; color: #dc2626; }
+        .finding-badge.high { background: #fffbeb; color: #d97706; }
+        .finding-badge.medium { background: #fefce8; color: #a16207; }
+        .finding-badge.low { background: #eff6ff; color: #2563eb; }
+        
+        .finding-category {
+            background: #e2e8f0;
+            color: #475569;
+        }
+        
+        .finding-toggle {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #e2e8f0;
+            color: #64748b;
+            transition: transform 0.2s;
+        }
+        
+        .finding-content {
+            display: none;
+            padding: 0 20px 20px 84px;
+            border-top: 1px solid var(--color-border);
+        }
+        
+        .finding-content.active {
+            display: block;
+        }
+        
+        .finding-content-section {
+            padding: 20px 0;
+            border-bottom: 1px solid var(--color-border);
+        }
+        
+        .finding-content-section:last-child {
+            border-bottom: none;
+        }
+        
+        .finding-content-section h4 {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--color-text-secondary);
+            margin-bottom: 12px;
+        }
+        
+        .finding-content-section p {
+            font-size: 14px;
+            line-height: 1.7;
+            color: var(--color-text);
+        }
+        
+        .finding-content-section ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .finding-content-section li {
+            font-size: 14px;
+            padding: 6px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+        
+        .finding-content-section li::before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: var(--color-primary);
+        }
+        
+        /* Code Blocks */
+        .code-block {
+            background: #1e293b;
+            border-radius: var(--radius-sm);
+            padding: 16px;
+            margin-top: 12px;
+            overflow-x: auto;
+        }
+        
+        .code-block pre {
+            margin: 0;
+            font-family: 'Monaco', 'Consolas', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #e2e8f0;
+        }
+        
+        .code-block code {
+            font-family: inherit;
+        }
+        
+        /* Technical Details */
+        .tech-details {
+            background: #f8fafc;
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-sm);
+            padding: 16px;
+            margin-top: 16px;
+        }
+        
+        .tech-details h5 {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--color-text-secondary);
+            margin-bottom: 12px;
+        }
+        
+        .tech-row {
+            display: flex;
+            margin-bottom: 12px;
+        }
+        
+        .tech-row:last-child {
+            margin-bottom: 0;
+        }
+        
+        .tech-label {
+            width: 120px;
+            font-size: 12px;
+            color: var(--color-text-secondary);
+            flex-shrink: 0;
+        }
+        
+        .tech-value {
+            flex: 1;
+            font-size: 13px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            color: var(--color-text);
+            word-break: break-all;
+        }
+        
+        /* Passed Checks */
+        .passed-section {
+            background: var(--color-card);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius);
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .passed-section h2 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--color-success);
+        }
+        
+        .passed-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 12px;
+        }
+        
+        .passed-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px;
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: var(--radius-sm);
+        }
+        
+        .passed-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #22c55e;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+        
+        .passed-content h4 {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+        
+        .passed-content p {
+            font-size: 12px;
+            color: var(--color-text-secondary);
+        }
+        
+        /* Quick Actions */
+        .actions-section {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            border-radius: var(--radius);
+            padding: 24px;
+            margin-bottom: 24px;
+            color: white;
+        }
+        
+        .actions-section h2 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        
+        .actions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 12px;
+        }
+        
+        .action-item {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: var(--radius-sm);
+            padding: 16px;
+        }
+        
+        .action-item h4 {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            opacity: 0.9;
+        }
+        
+        .action-item code {
+            display: block;
+            background: rgba(0,0,0,0.3);
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 12px;
+            color: #60a5fa;
+        }
+        
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 40px 24px;
+            border-top: 1px solid var(--color-border);
+            margin-top: 40px;
+        }
+        
+        .footer p {
+            font-size: 12px;
+            color: var(--color-text-secondary);
+            margin-bottom: 8px;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+            
+            .header {
+                padding: 20px;
+            }
+            
+            .grade-section {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .finding-content {
+                padding-left: 20px;
+            }
+            
+            .target-meta {
+                flex-direction: column;
+                gap: 12px;
+            }
+        }
+        
+        @media print {
+            body { background: white; }
+            .finding-content { display: block !important; }
+            .header { background: #3b82f6 !important; -webkit-print-color-adjust: exact; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header with Grade -->
+        <div class="header">
+            <div class="header-top">
+                <div class="brand">
+                    <div class="logo">S</div>
+                    <div class="brand-text">
+                        <h1>SupaSec Security Audit</h1>
+                        <p>Enterprise-grade security assessment</p>
+                    </div>
+                </div>
+                <div class="report-meta">
+                    <div class="report-id">ID: scan_2026-06-23T19-33-05</div>
+                    <div class="report-date">6/23/2026, 4:33:05 PM</div>
+                </div>
+            </div>
+            
+            <div class="grade-section">
+                <div class="grade-circle">
+                    <div class="grade-letter">C</div>
+                    <div class="grade-score">75/100</div>
+                </div>
+                <div class="grade-info">
+                    <h2>Security Grade C</h2>
+                    <p>Average security posture. Some issues need attention to improve your security grade.</p>
+                    <div class="security-meter">
+                        <div class="security-meter-fill"></div>
+                    </div>
+                    <div class="security-meter-labels">
+                        <span>0</span>
+                        <span>Security Score: 75</span>
+                        <span>100</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Target Info -->
+        <div class="target-card">
+            <h3>Target</h3>
+            <div class="target-url">npx</div>
+            <div class="target-meta">
+                <div class="target-meta-item">
+                    <span>Scan Mode</span>
+                    <span>URL Analysis</span>
+                </div>
+                <div class="target-meta-item">
+                    <span>Duration</span>
+                    <span>0.04s</span>
+                </div>
+                <div class="target-meta-item">
+                    <span>Findings</span>
+                    <span>3 issues detected</span>
+                </div>
+                <div class="target-meta-item">
+                    <span>Passed Checks</span>
+                    <span>0 checks passed</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon critical">🚨</div>
+                <div class="stat-value critical">0</div>
+                <div class="stat-label">Critical</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon high">⚠️</div>
+                <div class="stat-value high">2</div>
+                <div class="stat-label">High</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon medium">⚡</div>
+                <div class="stat-value medium">1</div>
+                <div class="stat-label">Medium</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon low">ℹ️</div>
+                <div class="stat-value low">0</div>
+                <div class="stat-label">Low</div>
+            </div>
+        </div>
+        
+        <!-- Category Scores -->
+        <div class="category-section">
+            <h2>📊 Category Breakdown</h2>
+            <div class="category-grid">
+                
+            </div>
+        </div>
+        
+        <!-- HTTPS/TLS Configuration -->
+        
+        <!-- HTTPS/TLS Configuration -->
+        <div class="category-section">
+            <h2>🔒 HTTPS/TLS Security</h2>
+            <div style="margin-bottom: 20px;">
+                <p style="font-size: 14px; color: var(--color-text-secondary);">
+                    Transport Layer Security (TLS) configuration analysis including HTTPS enforcement, 
+                    certificate validation, HSTS headers, and secure cookie settings.
+                </p>
+            </div>
+            <div style="margin-bottom: 24px;">
+                <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 12px; color: #dc2626;">⚠️ Issues Detected (1)</h3>
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <div style="background: #fef2f2; border-left: 4px solid #d97706; padding: 16px; border-radius: 0 8px 8px 0;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                            <span style="font-size: 18px;">⚠️</span>
+                            <span style="font-weight: 600; color: #d97706;">HIGH</span>
+                            <span style="font-size: 12px; color: var(--color-text-secondary);">• SEC-HTTPS-ERR</span>
+                        </div>
+                        <h4 style="font-size: 14px; font-weight: 600; margin-bottom: 4px;">HTTPS Connection Error</h4>
+                        <p style="font-size: 13px; color: var(--color-text-secondary); line-height: 1.5;">Failed to establish HTTPS connection: getaddrinfo ENOTFOUND npx</p>
+                        
+                        <div style="margin-top: 12px; padding: 12px; background: white; border-radius: 6px;">
+                            <span style="font-size: 12px; font-weight: 600; color: #16a34a;">✓ Fix: </span>
+                            <span style="font-size: 12px; color: var(--color-text);">Verify the target URL is correct and accessible via HTTPS.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Findings -->
+        
+        <div class="findings-section">
+            <div class="section-header">
+                <div>
+                    <h2>🔍 Security Findings</h2>
+                    <p>3 security issues identified across 2 severity levels</p>
+                </div>
+            </div>
+        <div class="finding-card">
+            <div class="finding-header">
+                <div class="finding-severity high">⚠️</div>
+                <div class="finding-title-section">
+                    <div class="finding-title">
+                        JWT Token Exposed
+                        <span class="finding-id">SEC-003</span>
+                    </div>
+                    <div class="finding-preview">Found jwt token in javascript content. JWT token detected</div>
+                    <div class="finding-meta">
+                        <span class="finding-badge high">HIGH</span>
+                        <span class="finding-badge finding-category">secrets</span>
+                        <span class="finding-badge" style="background: #f3f4f6; color: #4b5563;">📍 npx:3</span>
+                    </div>
+                </div>
+                <div class="finding-toggle">▼</div>
+            </div>
+            <div class="finding-content">
+                
+            <div class="finding-content-section">
+                <h4>Description</h4>
+                <p>Found jwt token in javascript content. JWT token detected</p>
+            </div>
+            <div class="finding-content-section">
+                <h4>Impact</h4>
+                <p>Authentication token exposure - unauthorized access to user accounts</p>
+                
+                <div style="margin-top: 12px;">
+                    <span style="font-size: 12px; color: var(--color-text-secondary);">Compliance Violations: </span>
+                    <span style="font-size: 11px; background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 4px; margin-right: 4px;">SOC2-CC6.1</span><span style="font-size: 11px; background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 4px; margin-right: 4px;">OWASP-A02-2021</span>
+                </div>
+            </div>
+            <div class="finding-content-section">
+                <h4>Remediation</h4>
+                <p>Remove jwt token from client-side code</p>
+                
+                <ul style="margin-top: 12px;">
+                    <li>Remove the exposed secret from client-side code immediately</li><li>Move the secret to environment variables on the server</li><li>Regenerate the exposed secret to invalidate the compromised key</li><li>Use only the anon/public key in frontend code</li>
+                </ul>
+                
+            </div>
+            <div class="finding-content-section">
+                <h4>Technical Details</h4>
+                <div class="tech-details">
+                    <div class="tech-row">
+                        <div class="tech-label">Exposed Key</div>
+                        <div class="tech-value">eyJh**************************************************iJ9.</div>
+                    </div>
+                    <div class="tech-row">
+                        <div class="tech-label">Key Type</div>
+                        <div class="tech-value">JWT Token</div>
+                    </div>
+                    <div class="tech-row">
+                        <div class="tech-label">Location</div>
+                        <div class="tech-value">npx:3</div>
+                    </div>
+                    <div class="tech-row" style="flex-direction: column;">
+                        <div class="tech-label" style="margin-bottom: 8px;">Code Snippet</div>
+                        <div class="code-block" style="margin: 0;">
+                            <pre><code>eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiJ9.</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            </div>
+        </div>
+        <div class="finding-card">
+            <div class="finding-header">
+                <div class="finding-severity high">⚠️</div>
+                <div class="finding-title-section">
+                    <div class="finding-title">
+                        HTTPS Connection Error
+                        <span class="finding-id">SEC-HTTPS-ERR</span>
+                    </div>
+                    <div class="finding-preview">Failed to establish HTTPS connection: getaddrinfo ENOTFOUND npx</div>
+                    <div class="finding-meta">
+                        <span class="finding-badge high">HIGH</span>
+                        <span class="finding-badge finding-category">transport</span>
+                        <span class="finding-badge" style="background: #f3f4f6; color: #4b5563;">📍 npx</span>
+                    </div>
+                </div>
+                <div class="finding-toggle">▼</div>
+            </div>
+            <div class="finding-content">
+                
+            <div class="finding-content-section">
+                <h4>Description</h4>
+                <p>Failed to establish HTTPS connection: getaddrinfo ENOTFOUND npx</p>
+            </div>
+            <div class="finding-content-section">
+                <h4>Impact</h4>
+                <p>Failed to establish HTTPS connection: getaddrinfo ENOTFOUND npx</p>
+                
+            </div>
+            <div class="finding-content-section">
+                <h4>Remediation</h4>
+                <p>Verify the target URL is correct and accessible via HTTPS.</p>
+                
+                
+            </div>
+            <div class="finding-content-section">
+                <h4>Technical Details</h4>
+                <div class="tech-details">
+                    <div class="tech-row">
+                        <div class="tech-label">Location</div>
+                        <div class="tech-value">npx</div>
+                    </div>
+                </div>
+            </div>
+            </div>
+        </div>
+        <div class="finding-card">
+            <div class="finding-header">
+                <div class="finding-severity medium">⚡</div>
+                <div class="finding-title-section">
+                    <div class="finding-title">
+                        Supabase Anon Key Exposed
+                        <span class="finding-id">SEC-001</span>
+                    </div>
+                    <div class="finding-preview">Found supabase anon key in javascript content. Anonymous key with public access - limited by RLS policies
+
+Permission Le...</div>
+                    <div class="finding-meta">
+                        <span class="finding-badge medium">MEDIUM</span>
+                        <span class="finding-badge finding-category">secrets</span>
+                        <span class="finding-badge" style="background: #f3f4f6; color: #4b5563;">📍 npx:3</span>
+                    </div>
+                </div>
+                <div class="finding-toggle">▼</div>
+            </div>
+            <div class="finding-content">
+                
+            <div class="finding-content-section">
+                <h4>Description</h4>
+                <p>Found supabase anon key in javascript content. Anonymous key with public access - limited by RLS policies
+
+Permission Level: Anonymous Key - Public access with RLS restrictions
+
+Potential Risks:
+• Access limited by RLS policies
+• Can sign up new users
+• Can access public data
+• Low risk if RLS properly configured</p>
+            </div>
+            <div class="finding-content-section">
+                <h4>Impact</h4>
+                <p>Complete database access - attacker can read, write, and delete all data</p>
+                
+                <div style="margin-top: 12px;">
+                    <span style="font-size: 12px; color: var(--color-text-secondary);">Compliance Violations: </span>
+                    <span style="font-size: 11px; background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 4px; margin-right: 4px;">SOC2-CC6.1</span><span style="font-size: 11px; background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 4px; margin-right: 4px;">GDPR-Article-32</span>
+                </div>
+            </div>
+            <div class="finding-content-section">
+                <h4>Remediation</h4>
+                <p>Remove supabase anon key from client-side code</p>
+                
+                <ul style="margin-top: 12px;">
+                    <li>Regenerate the service_role key in Supabase dashboard</li><li>Move service_role key to backend environment variables only</li><li>Use anon key for client-side operations</li><li>Review database access logs for unauthorized access</li>
+                </ul>
+                
+            </div>
+            <div class="finding-content-section">
+                <h4>Technical Details</h4>
+                <div class="tech-details">
+                    <div class="tech-row">
+                        <div class="tech-label">Exposed Key</div>
+                        <div class="tech-value">eyJh**************************************************iJ9.</div>
+                    </div>
+                    <div class="tech-row">
+                        <div class="tech-label">Key Type</div>
+                        <div class="tech-value">Supabase Anon Key</div>
+                    </div>
+                    <div class="tech-row">
+                        <div class="tech-label">Location</div>
+                        <div class="tech-value">npx:3</div>
+                    </div>
+                    <div class="tech-row" style="flex-direction: column;">
+                        <div class="tech-label" style="margin-bottom: 8px;">Code Snippet</div>
+                        <div class="code-block" style="margin: 0;">
+                            <pre><code>eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiJ9.</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            </div>
+        </div></div>
+        
+        <!-- Passed Checks -->
+        
+        
+        <!-- Quick Actions -->
+        <div class="actions-section">
+            <h2>🛠️ Quick Actions</h2>
+            <div class="actions-grid">
+                <div class="action-item">
+                    <h4>Fix Critical Issues</h4>
+                    <code>supasec fix --interactive</code>
+                </div>
+                <div class="action-item">
+                    <h4>Export as JSON</h4>
+                    <code>supasec scan --format json</code>
+                </div>
+                <div class="action-item">
+                    <h4>Save Snapshot</h4>
+                    <code>supasec snapshot save</code>
+                </div>
+                <div class="action-item">
+                    <h4>Deep Scan</h4>
+                    <code>supasec scan --deep</code>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <p>Generated by SupaSec v1.0.4 • Report ID: scan_2026-06-23T19-33-05</p>
+            <p>SupaSec is an independent security auditing tool and is not affiliated with Supabase Inc.</p>
+        </div>
+    </div>
+    
+    <script>
+        // Toggle finding details
+        document.querySelectorAll('.finding-header').forEach(header => {
+            header.addEventListener('click', () => {
+                const content = header.nextElementSibling;
+                const toggle = header.querySelector('.finding-toggle');
+                content.classList.toggle('active');
+                toggle.style.transform = content.classList.contains('active') ? 'rotate(180deg)' : 'rotate(0deg)';
+            });
+        });
+        
+        // Animate progress bars on load
+        window.addEventListener('load', () => {
+            document.querySelectorAll('.category-bar-fill').forEach(bar => {
+                const width = bar.style.width;
+                bar.style.width = '0';
+                setTimeout(() => bar.style.width = width, 100);
+            });
+        });
+    </script>
+</body>
+</html>

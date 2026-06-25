@@ -1,122 +1,108 @@
 <script lang="ts">
-  export default {
-    name: 'SupportView',
-  };
+  export default { name: 'SupportView' };
 </script>
 
 <script lang="ts" setup>
   import { ref } from 'vue';
-  import BaseCard from '@/components/UI/BaseCard.vue';
-  import {
-    WhatsAppOutlined,
-    QuestionCircleOutlined,
-    BugOutlined,
-    CustomerServiceOutlined,
-    CheckCircleOutlined,
-    ClockCircleOutlined,
-    SafetyOutlined,
-  } from '@ant-design/icons-vue';
 
   const whatsappNumber = '47997537883';
   const whatsappLink = `https://wa.me/55${whatsappNumber}`;
 
   const faqs = ref([
     {
-      question: 'Como funciona o treinamento de entrevistas?',
+      question: 'Como funciona a simulação de entrevistas?',
       answer:
-        'Simulações reais com feedback automático baseado em critérios técnicos.',
+        'O Ace, nosso entrevistador de IA, conduz uma entrevista realista em inglês por voz. Ao final das 8 perguntas, você recebe um feedback detalhado com pontuação, pontos fortes e áreas a melhorar.',
     },
     {
       question: 'O treinamento é em inglês?',
       answer:
-        'Sim. Toda a experiência é em inglês, simulando entrevistas reais para empresas internacionais e ajudando você a desenvolver confiança e vocabulário técnico.',
+        'Sim. Toda a experiência é em inglês, simulando entrevistas reais para empresas nacionais e internacionais, ajudando você a desenvolver confiança e vocabulário profissional.',
     },
     {
       question: 'Como funciona a assinatura?',
-      answer: 'Planos mensal e anual com acesso completo às simulações.',
-    },
-    {
-      question: 'Posso cancelar?',
-      answer: 'Sim, cancelamento direto pelo Stripe sem multa.',
-    },
-    {
-      question: 'Como minhas respostas são avaliadas?',
       answer:
-        'Utilizamos uma lógica no backend que analisa suas respostas com base em critérios técnicos e retorna uma nota junto com feedback estruturado.',
+        'Temos planos mensais e anuais. O plano Free permite 1 simulação a cada 2 dias. O Practice permite 1 por dia. O Fluent permite 3 por dia com acesso completo.',
+    },
+    {
+      question: 'Posso cancelar quando quiser?',
+      answer:
+        'Sim, cancelamento direto pelo Stripe sem multa ou burocracia. Seu acesso continua até o fim do período pago.',
+    },
+    {
+      question: 'O que é a API key própria?',
+      answer:
+        'Usuários dos planos Practice e Fluent podem adicionar sua própria chave de API da OpenAI ou Anthropic para realizar simulações ilimitadas além do limite diário incluso.',
     },
   ]);
 
   const activeFaq = ref<number | null>(null);
-
   const toggleFaq = (index: number) => {
     activeFaq.value = activeFaq.value === index ? null : index;
   };
-
-  const openWhatsApp = () => {
-    window.open(whatsappLink, '_blank');
-  };
+  const openWhatsApp = () => window.open(whatsappLink, '_blank');
 </script>
 
 <template>
-  <div class="container">
-    <div class="main-card">
-      <!-- Header -->
-      <div class="header">
-        <CustomerServiceOutlined class="icon" />
-        <h1>Suporte Técnico</h1>
-        <p>Estamos aqui para ajudar</p>
+  <div class="support-container">
+    <div class="hero">
+      <h1>💬 Suporte</h1>
+      <p>Estamos aqui para ajudar você</p>
+    </div>
+
+    <div class="cards-grid">
+      <div class="card">
+        <div class="card-icon">📱</div>
+        <h2>WhatsApp</h2>
+        <p>Resposta rápida para dúvidas e sugestões</p>
+        <p class="contact">(47) 99753-7883</p>
+        <button class="btn-whatsapp" @click="openWhatsApp">Falar agora</button>
       </div>
 
-      <!-- Cards -->
-      <div class="cards">
-        <BaseCard title="WhatsApp" center>
-          <WhatsAppOutlined class="icon whatsapp" />
-          <p>Resposta rápida para dúvidas</p>
-          <p class="contact">(47) 99753-7883</p>
-
-          <a-button type="primary" @click="openWhatsApp">
-            Falar Agora
-          </a-button>
-        </BaseCard>
-
-        <BaseCard title="Horário" center>
-          <ClockCircleOutlined class="icon" />
-          <p>Seg-Sex: 9h às 18h</p>
-          <p>Sábado: 9h às 13h</p>
-        </BaseCard>
-
-        <BaseCard title="Atendimento" center>
-          <SafetyOutlined class="icon" />
-          <p>Dados protegidos</p>
-          <p>Resposta em até 24h</p>
-        </BaseCard>
-
-        <BaseCard title="Reportar Bug" center>
-          <BugOutlined class="icon" />
-          <p>Encontrou problema?</p>
-          <p>Envie detalhes via WhatsApp</p>
-        </BaseCard>
+      <div class="card">
+        <div class="card-icon">🕐</div>
+        <h2>Horário de atendimento</h2>
+        <p>Segunda a Sexta: 9h às 18h</p>
+        <p>Sábado: 9h às 13h</p>
+        <p class="note">Resposta em até 24h úteis</p>
       </div>
 
-      <!-- FAQ -->
-      <div class="faq">
-        <h2>Perguntas Frequentes</h2>
+      <div class="card">
+        <div class="card-icon">🔒</div>
+        <h2>Segurança</h2>
+        <p>
+          Seus dados estão protegidos. Pagamentos processados pelo Stripe com
+          criptografia.
+        </p>
+      </div>
 
-        <div class="faq-list">
-          <BaseCard v-for="(faq, index) in faqs" :key="index">
-            <div class="faq-question" @click="toggleFaq(index)">
-              <div class="left">
-                <QuestionCircleOutlined />
-                <span>{{ faq.question }}</span>
-              </div>
-              <span>{{ activeFaq === index ? '−' : '+' }}</span>
-            </div>
+      <div class="card">
+        <div class="card-icon">🐛</div>
+        <h2>Reportar bug</h2>
+        <p>
+          Encontrou algum problema? Envie os detalhes via WhatsApp e corrigimos
+          o mais rápido possível.
+        </p>
+      </div>
+    </div>
 
-            <div v-if="activeFaq === index" class="faq-answer">
-              <CheckCircleOutlined />
-              <p>{{ faq.answer }}</p>
-            </div>
-          </BaseCard>
+    <!-- FAQ -->
+    <div class="faq-section">
+      <h2>Perguntas frequentes</h2>
+      <div class="faq-list">
+        <div
+          v-for="(faq, index) in faqs"
+          :key="index"
+          class="faq-item"
+          :class="{ active: activeFaq === index }"
+        >
+          <div class="faq-question" @click="toggleFaq(index)">
+            <span>{{ faq.question }}</span>
+            <span class="faq-icon">{{ activeFaq === index ? '−' : '+' }}</span>
+          </div>
+          <div v-if="activeFaq === index" class="faq-answer">
+            <p>{{ faq.answer }}</p>
+          </div>
         </div>
       </div>
     </div>
@@ -124,101 +110,137 @@
 </template>
 
 <style scoped>
-  .container {
-    padding: 40px;
-    max-width: 1200px;
+  .support-container {
+    max-width: 900px;
     margin: 0 auto;
-  }
-
-  .main-card {
-    background: white;
-    border-radius: 16px;
-    padding: 24px;
-    box-shadow:
-      0 1px 3px rgba(0, 0, 0, 0.1),
-      0 1px 2px rgba(0, 0, 0, 0.06);
-  }
-
-  .header {
-    text-align: center;
-    margin-bottom: 24px;
-  }
-
-  .icon {
-    font-size: 32px;
-    margin-bottom: 10px;
-    color: #001633;
-  }
-
-  .whatsapp {
-    color: #25d366;
-  }
-
-  .contact {
-    font-weight: 500;
-    margin: 8px 0;
-  }
-
-  /* Cards layout */
-  .cards {
+    padding: 24px 20px 80px;
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    margin-bottom: 24px;
+    gap: 24px;
   }
-
-  /* FAQ */
-  .faq {
-    margin-top: 16px;
-  }
-
-  .faq h2 {
+  .hero {
     text-align: center;
+    padding: 8px 0;
+  }
+  .hero h1 {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+  }
+  .hero p {
+    font-size: 14px;
+    color: var(--text-secondary);
+  }
+  .cards-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  @media (min-width: 768px) {
+    .cards-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  .card {
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: var(--card-shadow);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .card-icon {
+    font-size: 28px;
+  }
+  .card h2 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+  }
+  .card p {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.5;
+  }
+  .contact {
+    font-weight: 700;
+    color: var(--text-primary) !important;
+    font-size: 15px !important;
+  }
+  .note {
+    font-size: 12px !important;
+    color: var(--text-tertiary) !important;
+  }
+  .btn-whatsapp {
+    margin-top: 4px;
+    padding: 10px 20px;
+    background: #25d366;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    align-self: flex-start;
+  }
+  .btn-whatsapp:hover {
+    opacity: 0.9;
+  }
+  .faq-section {
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 20px 24px;
+    box-shadow: var(--card-shadow);
+  }
+  .faq-section h2 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
     margin-bottom: 16px;
   }
-
   .faq-list {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 8px;
   }
-
+  .faq-item {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .faq-item.active {
+    border-color: var(--accent);
+  }
   .faq-question {
     display: flex;
     justify-content: space-between;
-    cursor: pointer;
-    font-weight: 500;
-  }
-
-  .faq-question .left {
-    display: flex;
-    gap: 8px;
     align-items: center;
-  }
-
-  .faq-answer {
-    display: flex;
-    gap: 8px;
-    margin-top: 10px;
+    padding: 14px 16px;
+    cursor: pointer;
     font-size: 14px;
-    color: #4a5568;
+    font-weight: 500;
+    color: var(--text-primary);
+    gap: 12px;
   }
-
-  /* Responsive */
-  @media (min-width: 768px) {
-    .cards {
-      flex-direction: row;
-      flex-wrap: wrap;
-    }
-
-    .cards > * {
-      flex: 1 1 calc(50% - 8px);
-    }
+  .faq-question:hover {
+    background: var(--bg-secondary);
   }
-
-  @media (min-width: 1024px) {
-    .cards > * {
-      flex: 1 1 calc(25% - 12px);
-    }
+  .faq-icon {
+    font-size: 18px;
+    flex-shrink: 0;
+    color: var(--accent);
+  }
+  .faq-answer {
+    padding: 0 16px 14px;
+  }
+  .faq-answer p {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin: 0;
   }
 </style>

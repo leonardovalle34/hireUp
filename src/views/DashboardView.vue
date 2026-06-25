@@ -1,150 +1,296 @@
 <script lang="ts">
-  export default {
-    name: 'DashboardView',
-  };
+  export default { name: 'DashboardView' };
 </script>
 
 <script setup lang="ts">
-  import { onMounted, ref } from 'vue';
+  import { onMounted, ref, computed, watch, nextTick } from 'vue';
   import { useAuthStore } from '@/stores/auth';
   import { storeToRefs } from 'pinia';
-  import AlertComponent from '@/components/AlertComponent/AlertComponent.vue';
-  import BaseCard from '@/components/UI/BaseCard.vue';
-  import { ExclamationCircleOutlined } from '@ant-design/icons-vue';
+  import { useRouter } from 'vue-router';
+  import { Chart, registerables } from 'chart.js';
+
+  const aceWaving = new URL('../assets/ace/ace-waving.png', import.meta.url)
+    .href;
+  const aceThinking = new URL('../assets/ace/ace-thinking.png', import.meta.url)
+    .href;
+
+  Chart.register(...registerables);
 
   const auth = useAuthStore();
   const { dashboardUser } = storeToRefs(auth);
-  const typeOfQuestion = ref('behavioral');
-  const level = ref('junior');
-  const showAlert = ref(false);
+  const router = useRouter();
+  const weeklyChartRef = ref<HTMLCanvasElement | null>(null);
+  const scoreChartRef = ref<HTMLCanvasElement | null>(null);
+  let weeklyChartInstance: Chart | null = null;
+  let scoreChartInstance: Chart | null = null;
 
-  const onSubjectChange = (value: string) => {
-    typeOfQuestion.value = value;
-    localStorage.setItem('subject', value);
-  };
+  const planLabel = computed(() => {
+    const p = dashboardUser.value?.plan;
+    if (p === 'free') return 'Free';
+    if (p === 'practice') return 'Practice';
+    if (p === 'fluent') return 'Fluent';
+    if (p === 'pro') return 'Pro';
+    return p?.toUpperCase() ?? '—';
+  });
 
-  const onLevelChange = (value: string) => {
-    level.value = value;
-    localStorage.setItem('level', value);
-  };
+  const scoreColor = computed(() => {
+    const s = dashboardUser.value?.avg_score ?? 0;
+    if (s >= 12) return '#16a34a';
+    if (s >= 8) return '#ca8a04';
+    return '#dc2626';
+  });
 
-  onMounted(() => {
-    auth.fetchUser();
-    const storedSubject = localStorage.getItem('subject');
-    const storedLevel = localStorage.getItem('level');
+  const streakMessage = computed(() => {
+    const s = dashboardUser.value?.streak ?? 0;
+    if (s === 0) return 'Nenhum dia ainda';
+    if (s === 1) return '1 dia seguido';
+    return `${s} dias seguidos`;
+  });
 
-    if (dashboardUser.value?.plan === 'free') {
-      showAlert.value = true;
-      setTimeout(() => {
-        showAlert.value = false;
-      }, 10000);
+  const aceImage = computed(() => {
+    const s = dashboardUser.value?.streak ?? 0;
+    return s === 0 ? aceThinking : aceWaving;
+  });
+
+  const remainingLabel = computed(() => {
+    const r = dashboardUser.value?.remaining;
+    if (r === null || r === undefined) return '∞';
+    return String(r);
+  });
+
+  const canTrain = computed(() => {
+    const r = dashboardUser.value?.remaining;
+    return r === null || r === undefined || r > 0;
+  });
+
+  const calendarDays = computed(() => {
+    const days = [];
+    const activeDays = new Set(dashboardUser.value?.active_days ?? []);
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const key = d.toISOString().split('T')[0];
+      days.push({ key, active: activeDays.has(key), isToday: i === 0 });
+    }
+    return days;
+  });
+
+  const goToTraining = () => router.push('/interview');
+  const goToPricing = () => router.push('/pricing');
+
+  function buildCharts() {
+    const weekly = dashboardUser.value?.weekly_chart ?? [];
+    const scores = dashboardUser.value?.score_chart ?? [];
+
+    if (weeklyChartRef.value) {
+      if (weeklyChartInstance) weeklyChartInstance.destroy();
+      weeklyChartInstance = new Chart(weeklyChartRef.value, {
+        type: 'bar',
+        data: {
+          labels: weekly.map((d) => d.label),
+          datasets: [
+            {
+              label: 'Treinos',
+              data: weekly.map((d) => d.count),
+              backgroundColor: weekly.map((d) => {
+                const today = new Date().toISOString().split('T')[0];
+                return d.day === today ? '#1d4ed8' : '#bfdbfe';
+              }),
+              borderRadius: 6,
+              borderSkipped: false,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { stepSize: 1, font: { size: 11 } },
+              grid: { color: '#f3f4f6' },
+            },
+            x: { ticks: { font: { size: 12 } }, grid: { display: false } },
+          },
+        },
+      });
     }
 
-    if (storedSubject) {
-      typeOfQuestion.value = storedSubject;
-    } else {
-      localStorage.setItem('subject', typeOfQuestion.value);
-    }
+    if (scoreChartRef.value) {
+      if (scoreChartInstance) scoreChartInstance.destroy();
+      const hasData = scores.length > 0;
+      const labels = hasData
+        ? [...scores].reverse().map((s) => s.date)
+        : ['Sem dados'];
+      const data = hasData ? [...scores].reverse().map((s) => s.score) : [null];
 
-    if (storedLevel) {
-      level.value = storedLevel;
-    } else {
-      localStorage.setItem('level', level.value);
+      scoreChartInstance = new Chart(scoreChartRef.value, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            {
+              label: 'Score',
+              data,
+              borderColor: '#1d4ed8',
+              backgroundColor: 'rgba(29,78,216,0.08)',
+              pointBackgroundColor: '#1d4ed8',
+              pointRadius: hasData ? 4 : 0,
+              tension: 0.4,
+              fill: true,
+              spanGaps: false,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: {
+              min: 0,
+              max: 20,
+              ticks: { stepSize: 5, font: { size: 11 } },
+              grid: { color: '#f3f4f6' },
+            },
+            x: { ticks: { font: { size: 11 } }, grid: { display: false } },
+          },
+        },
+      });
     }
+  }
+
+  watch(
+    dashboardUser,
+    async (val) => {
+      if (val) {
+        await nextTick();
+        buildCharts();
+      }
+    },
+    { deep: true, immediate: true },
+  );
+
+  onMounted(async () => {
+    await auth.fetchUser();
   });
 </script>
 
 <template>
   <div class="dashboard-container">
-    <AlertComponent
-      v-if="showAlert"
-      :message="'Você está no plano Free. Faça upgrade para liberar todas as lições.'"
-      type="info"
-      :show-icon="true"
-      position="bottom"
-    >
-      <template #icon>
-        <ExclamationCircleOutlined />
-      </template>
-    </AlertComponent>
-
-    <div class="dashboard-card">
-      <div class="header">
+    <!-- Header -->
+    <div class="header-section">
+      <div class="header-text">
         <h1>👋 Olá, {{ dashboardUser?.name || dashboardUser?.email }}</h1>
         <p class="email">{{ dashboardUser?.email }}</p>
+        <span class="plan-badge" :class="dashboardUser?.plan">{{
+          planLabel
+        }}</span>
+      </div>
+      <img :src="aceImage" alt="Ace" class="ace-mascot" />
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <p class="stat-label">Membro desde</p>
+        <p class="stat-value small">
+          {{
+            dashboardUser?.created_at
+              ? new Date(dashboardUser.created_at).toLocaleDateString('pt-BR')
+              : '—'
+          }}
+        </p>
+      </div>
+      <div class="stat-card highlight">
+        <p class="stat-label">🔥 Streak</p>
+        <p class="stat-value">{{ streakMessage }}</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">Treinos esta semana</p>
+        <p class="stat-value">{{ dashboardUser?.weekly_count ?? 0 }}</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">Score médio</p>
+        <p class="stat-value" :style="{ color: scoreColor }">
+          {{ dashboardUser?.avg_score ?? 0 }}/20
+        </p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">Treinos hoje</p>
+        <p class="stat-value">{{ dashboardUser?.lessons_today ?? 0 }}</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">Restantes hoje</p>
+        <p class="stat-value">{{ remainingLabel }}</p>
+      </div>
+    </div>
+
+    <!-- Simulação de entrevista -->
+    <div class="section-card action-card">
+      <div class="action-header">
+        <div>
+          <h2 class="section-title">Simulação de entrevista</h2>
+          <p class="action-sub">
+            O Ace conduz uma entrevista realista em inglês baseada na sua área
+            profissional
+          </p>
+        </div>
+        <div class="action-remaining" :class="{ 'no-remaining': !canTrain }">
+          {{ canTrain ? `${remainingLabel} restantes` : 'Limite atingido' }}
+        </div>
       </div>
 
-      <div class="cards">
-        <BaseCard>
-          <p class="label">Plano</p>
-          <h2>{{ dashboardUser?.plan.toUpperCase() }}</h2>
-        </BaseCard>
+      <button class="btn-train" :disabled="!canTrain" @click="goToTraining">
+        {{ canTrain ? '🎯 Iniciar simulação' : '🔒 Limite atingido' }}
+      </button>
 
-        <BaseCard>
-          <p class="label">Membro desde</p>
-          <h2>
-            {{
-              new Date(dashboardUser?.created_at || '').toLocaleDateString(
-                'pt-BR',
-              )
-            }}
-          </h2>
-        </BaseCard>
+      <button v-if="!canTrain" class="btn-upgrade" @click="goToPricing">
+        ⚡ Fazer upgrade para mais simulações
+      </button>
+    </div>
 
-        <BaseCard>
-          <p class="label">Treinos realizados hoje</p>
-          <h2>{{ dashboardUser?.lessons_today || 0 }}</h2>
-        </BaseCard>
+    <!-- Gráfico semanal -->
+    <div class="section-card">
+      <h2 class="section-title">Treinos esta semana</h2>
+      <div class="chart-wrap">
+        <canvas
+          ref="weeklyChartRef"
+          role="img"
+          aria-label="Treinos por dia nos últimos 7 dias"
+        ></canvas>
+      </div>
+    </div>
 
-        <BaseCard>
-          <p class="label">Treinos restantes</p>
-          <h2>
-            {{
-              dashboardUser?.remaining === null
-                ? 'Ilimitados'
-                : dashboardUser?.remaining
-            }}
-          </h2>
-        </BaseCard>
+    <!-- Streak calendário + Score chart -->
+    <div class="two-col">
+      <div class="section-card">
+        <h2 class="section-title">🔥 Atividade — 30 dias</h2>
+        <div class="calendar-grid">
+          <div
+            v-for="d in calendarDays"
+            :key="d.key"
+            class="cal-day"
+            :class="{ 'cal-active': d.active, 'cal-today': d.isToday }"
+            :title="d.key"
+          />
+        </div>
+        <div class="cal-legend">
+          <span class="legend-dot inactive"></span><span>Sem treino</span>
+          <span class="legend-dot active"></span><span>Treinou</span>
+        </div>
+      </div>
 
-        <BaseCard>
-          <p class="label">Tech</p>
-          <a-select
-            v-model:value="typeOfQuestion"
-            @change="onSubjectChange"
-            class="select"
-            placeholder="Selecione uma tecnologia"
-          >
-            <a-select-option value="opinion">Opinião</a-select-option>
-            <a-select-option value="behavioral">Comportamental</a-select-option>
-            <a-select-option value="react">React</a-select-option>
-            <a-select-option value="next">Next.js</a-select-option>
-            <a-select-option value="javascript">JavaScript</a-select-option>
-            <a-select-option value="typescript">TypeScript</a-select-option>
-            <a-select-option value="python">Python</a-select-option>
-            <a-select-option value="node">Node.js/Backend</a-select-option>
-            <a-select-option value="java">Java</a-select-option>
-            <a-select-option value="devops">DevOps</a-select-option>
-            <a-select-option value="architecture">Arquitetura</a-select-option>
-            <a-select-option value="php">PHP</a-select-option>
-            <a-select-option value="ruby">Ruby</a-select-option>
-            <a-select-option value="frontend">Frontend</a-select-option>
-          </a-select>
-        </BaseCard>
-
-        <BaseCard>
-          <p class="label">Senioridade</p>
-          <a-select
-            v-model:value="level"
-            @change="onLevelChange"
-            class="select"
-            placeholder="Selecione a senioridade"
-          >
-            <a-select-option value="junior">Júnior</a-select-option>
-            <a-select-option value="pleno">Pleno</a-select-option>
-            <a-select-option value="senior">Sênior</a-select-option>
-          </a-select>
-        </BaseCard>
+      <div class="section-card">
+        <h2 class="section-title">Evolução do score</h2>
+        <div class="chart-wrap">
+          <canvas
+            ref="scoreChartRef"
+            role="img"
+            aria-label="Evolução do score nas últimas sessões"
+          ></canvas>
+        </div>
       </div>
     </div>
   </div>
@@ -152,67 +298,203 @@
 
 <style scoped>
   .dashboard-container {
-    padding: 40px;
-    max-width: 1200px;
+    padding: 24px 20px;
+    max-width: 1100px;
     margin: 0 auto;
     width: 100%;
-  }
-
-  .dashboard-card {
-    background: white;
-    border-radius: 16px;
-    padding: 24px;
-    box-shadow:
-      0 1px 3px rgba(0, 0, 0, 0.1),
-      0 1px 2px rgba(0, 0, 0, 0.06);
-  }
-
-  .header {
-    margin-bottom: 24px;
-    padding-bottom: 16px;
-    border-bottom: 1px solid #f0f0f0;
-  }
-
-  .header h1 {
-    font-size: 24px;
-    margin-bottom: 8px;
-  }
-
-  .email {
-    font-size: 14px;
-    color: #8c8c8c;
-  }
-
-  /* layout */
-  .cards {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 20px;
+    box-sizing: border-box;
   }
-
-  .label {
+  .header-section {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 20px 24px;
+    box-shadow: var(--card-shadow);
+  }
+  .header-text h1 {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: var(--text-primary);
+  }
+  .email {
     font-size: 13px;
-    color: #8c8c8c;
-    margin-bottom: 8px;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+  }
+  .ace-mascot {
+    width: 90px;
+    height: auto;
+    object-fit: contain;
+  }
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  @media (min-width: 768px) {
+    .stats-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+  .stat-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 14px 16px;
+    box-shadow: var(--card-shadow);
+  }
+  .stat-card.highlight {
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+  }
+  .stat-label {
+    font-size: 11px;
+    color: var(--text-tertiary);
     font-weight: 500;
     text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 6px;
   }
-
-  /* responsive */
+  .stat-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+  .stat-value.small {
+    font-size: 15px;
+  }
+  .section-card {
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 20px 24px;
+    box-shadow: var(--card-shadow);
+  }
+  .section-title {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+  }
+  .action-card {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .action-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .action-sub {
+    font-size: 13px;
+    color: var(--text-tertiary);
+    margin: 0;
+  }
+  .action-remaining {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 20px;
+    background: #dbeafe;
+    color: #1d4ed8;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .action-remaining.no-remaining {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+  .btn-train {
+    width: 100%;
+    padding: 14px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn-train:hover {
+    background: var(--accent-hover);
+  }
+  .btn-train:disabled {
+    background: var(--border);
+    color: var(--text-tertiary);
+    cursor: not-allowed;
+  }
+  .btn-upgrade {
+    width: 100%;
+    padding: 11px;
+    background: transparent;
+    color: var(--success);
+    border: 1px solid var(--success);
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-upgrade:hover {
+    background: var(--bg-secondary);
+  }
+  .chart-wrap {
+    position: relative;
+    height: 180px;
+    width: 100%;
+  }
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
   @media (min-width: 768px) {
-    .cards {
-      flex-direction: row;
-      flex-wrap: wrap;
-    }
-
-    .cards > * {
-      flex: 1 1 calc(50% - 8px);
+    .two-col {
+      grid-template-columns: 1fr 1fr;
     }
   }
-
-  @media (min-width: 1024px) {
-    .cards > * {
-      flex: 1 1 calc(33.33% - 10px);
-    }
+  .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 4px;
+    margin-bottom: 10px;
+  }
+  .cal-day {
+    aspect-ratio: 1;
+    border-radius: 4px;
+    background: var(--bg-secondary);
+  }
+  .cal-day.cal-active {
+    background: var(--accent);
+  }
+  .cal-day.cal-today {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+  .cal-legend {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--text-tertiary);
+  }
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    display: inline-block;
+  }
+  .legend-dot.inactive {
+    background: var(--bg-secondary);
+  }
+  .legend-dot.active {
+    background: var(--accent);
   }
 </style>

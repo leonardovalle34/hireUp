@@ -1,7 +1,5 @@
 <script lang="ts">
-  export default {
-    name: 'NavMenu',
-  };
+  export default { name: 'NavMenu' };
 </script>
 
 <script setup lang="ts">
@@ -11,7 +9,7 @@
     AudioOutlined,
     DollarOutlined,
     LogoutOutlined,
-    InfoCircleOutlined,
+    SettingOutlined,
     CustomerServiceOutlined,
   } from '@ant-design/icons-vue';
   import { useScreen } from '@/hooks/useScreen';
@@ -34,7 +32,7 @@
         <span v-if="!isMobile">Dashboard</span>
       </a-menu-item>
 
-      <a-menu-item key="lesson" @click="router.push('/lessons')">
+      <a-menu-item key="lesson" @click="router.push('/interview')">
         <AudioOutlined />
         <span v-if="!isMobile">Treino</span>
       </a-menu-item>
@@ -44,11 +42,9 @@
         <span v-if="!isMobile">Assinatura</span>
       </a-menu-item>
 
-      <a-menu-divider />
-
-      <a-menu-item key="about" @click="router.push('/about')">
-        <InfoCircleOutlined />
-        <span v-if="!isMobile">Quem Somos</span>
+      <a-menu-item key="settings" @click="router.push('/settings')">
+        <SettingOutlined />
+        <span v-if="!isMobile">Configurações</span>
       </a-menu-item>
 
       <a-menu-item key="support" @click="router.push('/support')">
@@ -56,15 +52,14 @@
         <span v-if="!isMobile">Suporte</span>
       </a-menu-item>
 
-      <a-menu-divider />
-
       <a-menu-item key="logout" @click="logout">
         <LogoutOutlined />
-        <span v-if="!isMobile">Logout</span>
+        <span v-if="!isMobile">Sair</span>
       </a-menu-item>
     </a-menu>
   </div>
 </template>
+
 <style scoped>
   .nav-menu {
     display: flex;
