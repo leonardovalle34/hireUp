@@ -3,6 +3,8 @@ import router from '@/router';
 import { signIn, signUp, signOut, getFullUser } from '@/services/auth';
 import { supabase } from '@/lib/supabase';
 import { IUser } from '@/interface/IUser';
+import { deleteAccount } from '@/services/account';
+import { updateEnglishLevel } from '@/services/profile';
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -68,13 +70,20 @@ export const useAuthStore = defineStore('auth', {
       router.push('/login');
     },
 
-    /*async loadUser() {
-      //TO-DO PUT SERVICE INTO SERVICE FILE
+    async deleteAccount() {
       this.loading = true;
-      const { data } = await supabase.auth.getUser();
-      this.user = data?.user ?? null;
-      this.loading = false;
-    },*/
+      try {
+        await deleteAccount();
+        await signOut();
+        this.user = null;
+        this.dashboardUser = null;
+        router.push('/login');
+      } catch (err: any) {
+        this.error = err.message;
+      } finally {
+        this.loading = false;
+      }
+    },
 
     listenAuth() {
       supabase.auth.onAuthStateChange((_event, session) => {
@@ -85,6 +94,22 @@ export const useAuthStore = defineStore('auth', {
           this.profile = null;
         }
       });
+    },
+
+    async updateLevel(level: string) {
+      this.loading = true;
+      try {
+        if (!this.user?.id) throw new Error('Usuário não autenticado');
+        await updateEnglishLevel(this.user.id, level);
+        if (this.dashboardUser) {
+          // atualiza localmente sem precisar refetch
+          (this.dashboardUser as any).english_level = level;
+        }
+      } catch (err: any) {
+        this.error = err.message;
+      } finally {
+        this.loading = false;
+      }
     },
   },
 });

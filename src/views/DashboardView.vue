@@ -24,6 +24,8 @@
   let weeklyChartInstance: Chart | null = null;
   let scoreChartInstance: Chart | null = null;
 
+  const hasApiKey = computed(() => !!localStorage.getItem('userApiKey'));
+
   const planLabel = computed(() => {
     const p = dashboardUser.value?.plan;
     if (p === 'free') return 'Free';
@@ -59,6 +61,7 @@
   });
 
   const canTrain = computed(() => {
+    if (hasApiKey.value) return true;
     const r = dashboardUser.value?.remaining;
     return r === null || r === undefined || r > 0;
   });
@@ -238,7 +241,9 @@
           </p>
         </div>
         <div class="action-remaining" :class="{ 'no-remaining': !canTrain }">
-          {{ canTrain ? `${remainingLabel} restantes` : 'Limite atingido' }}
+          <span v-if="hasApiKey">🔑 Ilimitado com API key</span>
+          <span v-else-if="canTrain">{{ remainingLabel }} restantes</span>
+          <span v-else>Limite atingido</span>
         </div>
       </div>
 

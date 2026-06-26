@@ -4,13 +4,24 @@
 </script>
 
 <template>
-  <a-layout style="min-height: 100vh">
+  <a-layout class="app-layout">
     <Header />
     <a-layout>
-      <a-layout-content style="padding: 40px">
+      <a-layout-content class="app-content">
         <router-view />
         <NavMenu />
       </a-layout-content>
     </a-layout>
   </a-layout>
 </template>
+
+<style scoped>
+  .app-layout {
+    min-height: 100vh;
+    background: transparent !important;
+  }
+  .app-content {
+    padding: 20px;
+    background: transparent !important;
+  }
+</style>

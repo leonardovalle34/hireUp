@@ -3,10 +3,12 @@
 </script>
 
 <script setup lang="ts">
-  import { ref, computed, onUnmounted } from 'vue';
+  import { ref, computed, onMounted, onUnmounted } from 'vue';
   import { useRouter } from 'vue-router';
   import { useAuthStore } from '@/stores/auth';
+  import { useInterviewStore } from '@/stores/interview';
   import { storeToRefs } from 'pinia';
+  import { message } from 'ant-design-vue';
 
   const aceWaving = new URL('../assets/ace/ace-waving.png', import.meta.url)
     .href;
@@ -15,6 +17,7 @@
 
   const router = useRouter();
   const auth = useAuthStore();
+  const interviewStore = useInterviewStore();
   const { user } = storeToRefs(auth);
 
   const stage = ref<'intro' | 'interview' | 'feedback'>('intro');
@@ -24,12 +27,21 @@
   const isLoading = ref(false);
   const isRecording = ref(false);
   const isSpeaking = ref(false);
-  const questionReady = ref(false); // iOS: pergunta pronta para ouvir
+  const questionReady = ref(false);
   const feedback = ref<any>(null);
-  const errorMsg = ref<string | null>(null);
   const audioBlob = ref<Blob | null>(null);
   const audioUrl = ref<string | null>(null);
   const hasRecorded = ref(false);
+  const activeModel = ref('');
+  const activeModelLabel = ref('Claude Haiku');
+
+  const modelLabels: Record<string, string> = {
+    'claude-haiku-4-5-20251001': 'Claude Haiku',
+    'claude-sonnet-4-6': 'Claude Sonnet',
+    'claude-opus-4-6': 'Claude Opus',
+    'gpt-4o-mini': 'GPT-4o Mini',
+    'gpt-4o': 'GPT-4o',
+  };
 
   let mediaRecorder: MediaRecorder | null = null;
   let chunks: Blob[] = [];
@@ -41,7 +53,6 @@
     if (speakTimer) clearTimeout(speakTimer);
     window.speechSynthesis.cancel();
     questionReady.value = true;
-
     try {
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = 'en-US';
@@ -61,24 +72,34 @@
         isSpeaking.value = false;
       }, 20000);
     } catch {
-      // iOS bloqueou autoplay — usuário usa o botão
+      // iOS bloqueou autoplay
     }
   }
 
   async function startInterview() {
     isLoading.value = true;
-    errorMsg.value = null;
+
+    const model = localStorage.getItem('userModel') || '';
+    const key = localStorage.getItem('userApiKey') || '';
+
+    // Modelo externo sem key — bloqueia
+    if (model && !key) {
+      message.warning(
+        `Você selecionou ${activeModelLabel.value} mas não adicionou uma API key. Vá em Configurações → API Key própria.`,
+        6,
+      );
+      isLoading.value = false;
+      return;
+    }
 
     try {
-      const { data: canStart, error } = await (
-        await import('@/lib/supabase')
-      ).supabase.rpc('can_user_take_lesson', { uid: user.value?.id });
-
-      if (error) throw error;
-
-      if (!canStart) {
-        router.push('/pricing');
-        return;
+      // Tem API key → ilimitado, pula verificação de plano
+      if (!key) {
+        const canStart = await interviewStore.canStart(user.value?.id || '');
+        if (!canStart) {
+          router.push('/pricing');
+          return;
+        }
       }
 
       stage.value = 'interview';
@@ -91,63 +112,48 @@
       isLoading.value = false;
       await callApi(null);
     } catch (err: any) {
-      errorMsg.value = err.message;
+      message.error(err.message || 'Erro ao iniciar entrevista.', 5);
       isLoading.value = false;
     }
   }
 
   async function callApi(audio: Blob | null) {
     isLoading.value = true;
-    errorMsg.value = null;
     audioBlob.value = null;
     audioUrl.value = null;
     hasRecorded.value = false;
     questionReady.value = false;
 
     try {
-      const {
-        data: { session },
-      } = await (await import('@/lib/supabase')).supabase.auth.getSession();
-      if (!session?.access_token) throw new Error('Não autenticado');
-
       const form = new FormData();
+
       if (audio) {
-        // Detecta extensão correta para iOS (mp4) e Android (webm)
         const mimeType = audio.type || 'audio/webm';
         let extension = 'webm';
         if (
           mimeType.includes('mp4') ||
           mimeType.includes('m4a') ||
           mimeType.includes('aac')
-        ) {
+        )
           extension = 'mp4';
-        } else if (mimeType.includes('ogg')) {
-          extension = 'ogg';
-        } else if (mimeType.includes('wav')) {
-          extension = 'wav';
-        } else if (mimeType.includes('mpeg') || mimeType.includes('mp3')) {
+        else if (mimeType.includes('ogg')) extension = 'ogg';
+        else if (mimeType.includes('wav')) extension = 'wav';
+        else if (mimeType.includes('mpeg') || mimeType.includes('mp3'))
           extension = 'mp3';
-        }
         form.append('file', audio, `recording.${extension}`);
       }
 
       form.append('area', area.value);
       form.append('turn', String(turn.value + 1));
       form.append('history', JSON.stringify(history.value));
+
       const key = localStorage.getItem('userApiKey');
       if (key) form.append('userApiKey', key);
 
-      const res = await fetch(
-        'https://kuczdljitnzixxzflhil.supabase.co/functions/v1/interview',
-        {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${session.access_token}` },
-          body: form,
-        },
-      );
+      const model = localStorage.getItem('userModel');
+      if (model) form.append('userModel', model);
 
-      if (!res.ok) throw new Error(`Erro no servidor: ${res.status}`);
-      const data = await res.json();
+      const data = await interviewStore.sendTurn(form);
 
       if (data.is_finished) {
         feedback.value = data.feedback;
@@ -161,12 +167,27 @@
       }
 
       turn.value++;
-      currentQuestion.value = data.next_question;
-      history.value.push({ question: data.next_question, answer: '' });
+      currentQuestion.value = data.next_question!;
+      history.value.push({ question: data.next_question!, answer: '' });
       isLoading.value = false;
-      speakNoBlock(data.next_question);
+      speakNoBlock(data.next_question!);
     } catch (err: any) {
-      errorMsg.value = err.message;
+      const errMsg = interviewStore.error || err.message || '';
+      if (
+        errMsg.includes('API key') ||
+        errMsg.includes('401') ||
+        errMsg.includes('403')
+      ) {
+        message.error(
+          'Erro com sua API key. Verifique em Configurações → API Key própria.',
+          6,
+        );
+      } else {
+        message.error(
+          'Erro de comunicação com o servidor. Tente novamente.',
+          4,
+        );
+      }
       isLoading.value = false;
     }
   }
@@ -193,11 +214,9 @@
       .then((stream) => {
         const mimeType = getSupportedMimeType();
         mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : {});
-
         mediaRecorder.ondataavailable = (e) => {
           if (e.data.size > 0) chunks.push(e.data);
         };
-
         mediaRecorder.onstop = () => {
           const type = mediaRecorder?.mimeType || 'audio/webm';
           const blob = new Blob(chunks, { type });
@@ -207,12 +226,11 @@
           stream.getTracks().forEach((t) => t.stop());
           mediaRecorder = null;
         };
-
         mediaRecorder.start(100);
         isRecording.value = true;
       })
       .catch((err) => {
-        errorMsg.value = 'Erro ao acessar microfone: ' + err.message;
+        message.error('Erro ao acessar microfone: ' + err.message, 5);
       });
   }
 
@@ -240,7 +258,6 @@
     history.value = [];
     currentQuestion.value = '';
     feedback.value = null;
-    errorMsg.value = null;
     audioBlob.value = null;
     if (audioUrl.value) URL.revokeObjectURL(audioUrl.value);
     audioUrl.value = null;
@@ -248,7 +265,18 @@
     isSpeaking.value = false;
     questionReady.value = false;
     window.speechSynthesis.cancel();
+
+    // Atualiza modelo ao voltar pra intro
+    const saved = localStorage.getItem('userModel') || '';
+    activeModel.value = saved;
+    activeModelLabel.value = modelLabels[saved] || 'Claude Haiku';
   }
+
+  onMounted(() => {
+    const saved = localStorage.getItem('userModel') || '';
+    activeModel.value = saved;
+    activeModelLabel.value = modelLabels[saved] || 'Claude Haiku';
+  });
 
   onUnmounted(() => {
     window.speechSynthesis.cancel();
@@ -276,8 +304,17 @@
         <span>💬 8 perguntas</span>
         <span>📊 Feedback com IA</span>
       </div>
-      <button class="btn-blue" @click="startInterview">
-        Iniciar Entrevista
+
+      <div
+        class="model-badge"
+        :class="activeModel ? 'model-custom' : 'model-default'"
+      >
+        <span v-if="!activeModel">🤖 Claude Haiku — incluso no plano</span>
+        <span v-else>🔑 {{ activeModelLabel }} — usando sua API key</span>
+      </div>
+
+      <button class="btn-blue" :disabled="isLoading" @click="startInterview">
+        {{ isLoading ? 'Verificando...' : 'Iniciar Entrevista' }}
       </button>
       <button class="btn-ghost" @click="router.push('/')">Voltar</button>
     </div>
@@ -299,13 +336,11 @@
         :class="{ speaking: isSpeaking }"
       />
 
-      <!-- Loading -->
       <div v-if="isLoading" class="loading">
         <div class="spinner"></div>
         <span>Ace está pensando...</span>
       </div>
 
-      <!-- Pergunta -->
       <div v-if="!isLoading && currentQuestion" class="question-box">
         <p>{{ currentQuestion }}</p>
         <button
@@ -320,10 +355,6 @@
         </button>
       </div>
 
-      <!-- Erro -->
-      <div v-if="errorMsg" class="error-box">{{ errorMsg }}</div>
-
-      <!-- Controles -->
       <div v-if="!isLoading" class="controls">
         <button
           v-if="!isRecording && !hasRecorded"
@@ -332,11 +363,9 @@
         >
           🎤 Gravar Resposta
         </button>
-
         <button v-if="isRecording" class="btn-red" @click="stopRecording">
           ⏹️ Parar Gravação
         </button>
-
         <div v-if="hasRecorded && !isRecording" class="recorded-wrap">
           <audio
             v-if="audioUrl"
@@ -373,25 +402,21 @@
             {{ feedback.score }}/20
           </p>
         </div>
-
         <div class="fb-section" v-if="feedback.summary">
           <p>{{ feedback.summary }}</p>
         </div>
-
         <div class="fb-section" v-if="feedback.strengths?.length">
           <h3>✅ Pontos fortes</h3>
           <ul>
             <li v-for="s in feedback.strengths" :key="s">{{ s }}</li>
           </ul>
         </div>
-
         <div class="fb-section" v-if="feedback.improvements?.length">
           <h3>📈 Pontos a melhorar</h3>
           <ul>
             <li v-for="i in feedback.improvements" :key="i">{{ i }}</li>
           </ul>
         </div>
-
         <div class="fb-section" v-if="feedback.recommendation">
           <h3>💡 Recomendação</h3>
           <p>{{ feedback.recommendation }}</p>
@@ -475,6 +500,20 @@
     to {
       transform: scale(1.1);
     }
+  }
+  .model-badge {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .model-default {
+    background: #d1fae5;
+    color: #065f46;
+  }
+  .model-custom {
+    background: #fef9c3;
+    color: #854d0e;
   }
   .progress-bar {
     width: 100%;
@@ -560,15 +599,6 @@
     to {
       transform: scale(1.03);
     }
-  }
-  .error-box {
-    background: #fee2e2;
-    color: var(--danger);
-    padding: 10px 14px;
-    border-radius: 8px;
-    font-size: 13px;
-    width: 100%;
-    text-align: center;
   }
   .controls {
     display: flex;

@@ -6,7 +6,6 @@
   import { ref, onMounted, computed } from 'vue';
   import { useAuthStore } from '@/stores/auth';
   import { storeToRefs } from 'pinia';
-  import { supabase } from '@/lib/supabase';
 
   const auth = useAuthStore();
   const { dashboardUser } = storeToRefs(auth);
@@ -19,6 +18,10 @@
   const apiKeyVisible = ref(false);
   const apiKeySaved = ref(false);
 
+  // Modelo
+  const selectedModel = ref('');
+  const modelSaved = ref(false);
+
   // Nível
   const englishLevel = ref('');
   const levelSaved = ref(false);
@@ -27,6 +30,7 @@
   const showDeleteConfirm = ref(false);
   const deleteConfirmText = ref('');
   const deleteLoading = ref(false);
+  const errorMsg = ref('');
 
   const levels = [
     { value: 'beginner', label: 'Beginner — Iniciante' },
@@ -34,6 +38,47 @@
     { value: 'intermediate', label: 'Intermediate — Intermediário' },
     { value: 'advanced', label: 'Advanced — Avançado' },
   ];
+
+  const models = [
+    {
+      group: 'Anthropic (Claude)',
+      options: [
+        {
+          value: 'claude-haiku-4-5-20251001',
+          label: 'Claude Haiku — Rápido e barato (padrão)',
+        },
+        { value: 'claude-sonnet-4-6', label: 'Claude Sonnet — Equilibrado' },
+        { value: 'claude-opus-4-6', label: 'Claude Opus — Mais poderoso' },
+      ],
+    },
+    {
+      group: 'OpenAI',
+      options: [
+        { value: 'gpt-4o-mini', label: 'GPT-4o Mini — Rápido e barato' },
+        { value: 'gpt-4o', label: 'GPT-4o — Premium' },
+      ],
+    },
+  ];
+
+  const modelProvider = computed(() => {
+    if (!selectedModel.value) return null;
+    if (selectedModel.value.startsWith('claude')) return 'anthropic';
+    if (
+      selectedModel.value.startsWith('gpt') ||
+      selectedModel.value.startsWith('o1')
+    )
+      return 'openai';
+    return null;
+  });
+
+  const apiKeyHint = computed(() => {
+    if (!selectedModel.value) return null;
+    if (modelProvider.value === 'anthropic')
+      return 'Insira sua chave Anthropic (sk-ant-...)';
+    if (modelProvider.value === 'openai')
+      return 'Insira sua chave OpenAI (sk-...)';
+    return null;
+  });
 
   const planLabel = computed(() => {
     const p = dashboardUser.value?.plan;
@@ -69,35 +114,32 @@
     apiKey.value = '';
   }
 
-  async function saveLevel() {
-    if (!englishLevel.value) return;
-    const { error } = await supabase
-      .from('profiles')
-      .update({ english_level: englishLevel.value })
-      .eq('id', dashboardUser.value?.id || '');
-
-    if (!error) {
-      levelSaved.value = true;
-      setTimeout(() => {
-        levelSaved.value = false;
-      }, 2000);
+  function onModelChange() {
+    if (selectedModel.value) {
+      localStorage.setItem('userModel', selectedModel.value);
+    } else {
+      localStorage.removeItem('userModel');
     }
+    modelSaved.value = true;
+    setTimeout(() => {
+      modelSaved.value = false;
+    }, 2000);
   }
 
-  async function deleteAccount() {
+  async function saveLevel() {
+    if (!englishLevel.value) return;
+    await auth.updateLevel(englishLevel.value);
+    levelSaved.value = true;
+    setTimeout(() => {
+      levelSaved.value = false;
+    }, 2000);
+  }
+
+  async function confirmDeleteAccount() {
     if (deleteConfirmText.value !== 'DELETAR') return;
     deleteLoading.value = true;
-    try {
-      await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', dashboardUser.value?.id || '');
-      await supabase.auth.signOut();
-    } catch (err) {
-      console.error(err);
-    } finally {
-      deleteLoading.value = false;
-    }
+    await auth.deleteAccount();
+    deleteLoading.value = false;
   }
 
   onMounted(() => {
@@ -106,6 +148,9 @@
 
     const savedKey = localStorage.getItem('userApiKey');
     if (savedKey) apiKey.value = savedKey;
+
+    const savedModel = localStorage.getItem('userModel');
+    if (savedModel) selectedModel.value = savedModel;
   });
 </script>
 
@@ -151,18 +196,70 @@
       </div>
     </div>
 
+    <!-- Modelo de IA -->
+    <!-- Modelo de IA -->
+    <div class="settings-card">
+      <h2 class="card-title">🤖 Modelo de IA</h2>
+      <p class="card-desc">
+        Escolha o modelo usado nas simulações de entrevista.
+      </p>
+
+      <select v-model="selectedModel" class="select" @change="onModelChange">
+        <option value="">⭐ Claude Haiku — Padrão incluso no seu plano</option>
+        <optgroup label="Anthropic (Claude) — requer API key Anthropic">
+          <option value="claude-sonnet-4-6">
+            Claude Sonnet — Mais inteligente (usa sua key)
+          </option>
+          <option value="claude-opus-4-6">
+            Claude Opus — Mais poderoso (usa sua key)
+          </option>
+        </optgroup>
+        <optgroup label="OpenAI — requer API key OpenAI">
+          <option value="gpt-4o-mini">
+            GPT-4o Mini — Rápido (usa sua key)
+          </option>
+          <option value="gpt-4o">GPT-4o — Premium (usa sua key)</option>
+        </optgroup>
+      </select>
+
+      <div v-if="!selectedModel" class="model-info success">
+        ✅ Usando Claude Haiku — incluso no seu plano, sem custo adicional.
+      </div>
+
+      <div v-if="selectedModel" class="model-info warning">
+        ⚠️ Este modelo usa sua API key própria. Certifique-se de ter adicionado
+        sua chave
+        {{
+          modelProvider === 'anthropic'
+            ? 'Anthropic (sk-ant-...)'
+            : 'OpenAI (sk-...)'
+        }}
+        abaixo.
+      </div>
+
+      <p v-if="modelSaved" class="model-saved-msg">✅ Preferência salva!</p>
+    </div>
+
     <!-- API Key -->
     <div class="settings-card">
       <h2 class="card-title">🔑 API Key própria</h2>
       <p class="card-desc">
         Use sua própria API key para simulações ilimitadas. Sua chave é salva
         apenas neste dispositivo.
+        {{
+          modelProvider === 'openai' ? 'Necessário para modelos OpenAI.' : ''
+        }}
+        {{
+          modelProvider === 'anthropic'
+            ? 'Necessário para modelos Claude com sua conta.'
+            : ''
+        }}
       </p>
       <div class="input-row">
         <input
           :type="apiKeyVisible ? 'text' : 'password'"
           v-model="apiKey"
-          placeholder="sk-... ou sk-ant-..."
+          :placeholder="modelProvider === 'anthropic' ? 'sk-ant-...' : 'sk-...'"
           class="input"
         />
         <button class="btn-icon" @click="apiKeyVisible = !apiKeyVisible">
@@ -219,11 +316,12 @@
           placeholder="DELETAR"
           class="input"
         />
+        <p v-if="errorMsg" class="error-msg">{{ errorMsg }}</p>
         <div class="btn-row">
           <button
             class="btn-danger"
             :disabled="deleteConfirmText !== 'DELETAR' || deleteLoading"
-            @click="deleteAccount"
+            @click="confirmDeleteAccount"
           >
             {{ deleteLoading ? 'Deletando...' : 'Confirmar exclusão' }}
           </button>
@@ -269,6 +367,11 @@
   .danger-card {
     border: 1px solid #fecaca;
   }
+  .model-saved-msg {
+    font-size: 12px;
+    color: var(--success);
+    margin: 0;
+  }
   .card-title {
     font-size: 15px;
     font-weight: 600;
@@ -299,6 +402,16 @@
   .setting-desc {
     font-size: 12px;
     color: var(--text-tertiary);
+    margin: 0;
+  }
+  .model-hint {
+    background: #fef9c3;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: #854d0e;
+  }
+  .model-hint p {
     margin: 0;
   }
   .input-row {
@@ -419,5 +532,10 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
+  }
+  .error-msg {
+    font-size: 12px;
+    color: var(--danger);
+    margin: 0;
   }
 </style>
