@@ -34,7 +34,7 @@
     <div class="brand">
       <img src="/noTitleHireUpLogo.png" alt="Logo" width="150px" />
       <h1>HireUp</h1>
-      <p>Daily English Challenge for developers</p>
+      <p>Daily English Challenge</p>
     </div>
 
     <a-card class="login-card" bordered>
