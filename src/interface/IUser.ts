@@ -35,4 +35,7 @@ export interface IUser {
   weekly_chart: IWeeklyChart[];
   score_chart: IScoreChart[];
   active_days: string[];
+  placement_test_done?: boolean;
+  placement_test_done_at?: string | null;
+  english_level?: string | null;
 }

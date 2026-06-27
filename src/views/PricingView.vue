@@ -135,12 +135,12 @@
   .pricing-header h1 {
     font-size: 24px;
     font-weight: 700;
-    color: var(--text-primary);
+    color: white;
     margin-bottom: 8px;
   }
   .pricing-header p {
     font-size: 14px;
-    color: var(--text-secondary);
+    color: rgba(255, 255, 255, 0.8);
   }
 
   .billing-toggle {

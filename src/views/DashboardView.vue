@@ -8,10 +8,15 @@
   import { storeToRefs } from 'pinia';
   import { useRouter } from 'vue-router';
   import { Chart, registerables } from 'chart.js';
+  import { supabase } from '@/lib/supabase';
 
+  const aceSleeping = new URL('../assets/ace/ace-sleeping.png', import.meta.url)
+    .href;
   const aceWaving = new URL('../assets/ace/ace-waving.png', import.meta.url)
     .href;
   const aceThinking = new URL('../assets/ace/ace-thinking.png', import.meta.url)
+    .href;
+  const aceThumbsup = new URL('../assets/ace/ace-thumbsup.png', import.meta.url)
     .href;
 
   Chart.register(...registerables);
@@ -23,6 +28,13 @@
   const scoreChartRef = ref<HTMLCanvasElement | null>(null);
   let weeklyChartInstance: Chart | null = null;
   let scoreChartInstance: Chart | null = null;
+
+  const aceImage = computed(() => {
+    const s = dashboardUser.value?.streak ?? 0;
+    if (s === 0) return aceSleeping;
+    if (s >= 7) return aceWaving;
+    return aceThinking;
+  });
 
   const hasApiKey = computed(() => !!localStorage.getItem('userApiKey'));
 
@@ -47,11 +59,6 @@
     if (s === 0) return 'Nenhum dia ainda';
     if (s === 1) return '1 dia seguido';
     return `${s} dias seguidos`;
-  });
-
-  const aceImage = computed(() => {
-    const s = dashboardUser.value?.streak ?? 0;
-    return s === 0 ? aceThinking : aceWaving;
   });
 
   const remainingLabel = computed(() => {
@@ -81,9 +88,59 @@
   const goToTraining = () => router.push('/interview');
   const goToPricing = () => router.push('/pricing');
 
+  // ── Placement test modal ───────────────────────────────────────────────────
+  const showPlacementModal = ref(false);
+
+  async function checkPlacementTest() {
+    const skipped = localStorage.getItem('placement_test_skipped') === 'true';
+    if (skipped) return;
+
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    if (!authUser) return;
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('placement_test_done')
+      .eq('id', authUser.id)
+      .single();
+
+    if (profile && !profile.placement_test_done) {
+      showPlacementModal.value = true;
+    }
+  }
+
+  function placementDoNow() {
+    showPlacementModal.value = false;
+    router.push('/placement-test');
+  }
+
+  function placementLater() {
+    showPlacementModal.value = false;
+  }
+
+  function placementSkip() {
+    localStorage.setItem('placement_test_skipped', 'true');
+    showPlacementModal.value = false;
+    router.push('/settings');
+  }
+
+  function getChartColors() {
+    const isDark =
+      document.documentElement.getAttribute('data-theme') === 'dark';
+    return {
+      grid: isDark ? '#334155' : '#f3f4f6',
+      text: isDark ? '#94a3b8' : '#6b7280',
+      bar: isDark ? '#3b82f6' : '#bfdbfe',
+      barActive: isDark ? '#60a5fa' : '#1d4ed8',
+      line: isDark ? '#60a5fa' : '#1d4ed8',
+      fill: isDark ? 'rgba(96,165,250,0.15)' : 'rgba(29,78,216,0.08)',
+    };
+  }
+
   function buildCharts() {
     const weekly = dashboardUser.value?.weekly_chart ?? [];
     const scores = dashboardUser.value?.score_chart ?? [];
+    const colors = getChartColors();
 
     if (weeklyChartRef.value) {
       if (weeklyChartInstance) weeklyChartInstance.destroy();
@@ -97,7 +154,7 @@
               data: weekly.map((d) => d.count),
               backgroundColor: weekly.map((d) => {
                 const today = new Date().toISOString().split('T')[0];
-                return d.day === today ? '#1d4ed8' : '#bfdbfe';
+                return d.day === today ? colors.barActive : colors.bar;
               }),
               borderRadius: 6,
               borderSkipped: false,
@@ -111,10 +168,13 @@
           scales: {
             y: {
               beginAtZero: true,
-              ticks: { stepSize: 1, font: { size: 11 } },
-              grid: { color: '#f3f4f6' },
+              ticks: { stepSize: 1, font: { size: 11 }, color: colors.text },
+              grid: { color: colors.grid },
             },
-            x: { ticks: { font: { size: 12 } }, grid: { display: false } },
+            x: {
+              ticks: { font: { size: 12 }, color: colors.text },
+              grid: { display: false },
+            },
           },
         },
       });
@@ -136,9 +196,9 @@
             {
               label: 'Score',
               data,
-              borderColor: '#1d4ed8',
-              backgroundColor: 'rgba(29,78,216,0.08)',
-              pointBackgroundColor: '#1d4ed8',
+              borderColor: colors.line,
+              backgroundColor: colors.fill,
+              pointBackgroundColor: colors.line,
               pointRadius: hasData ? 4 : 0,
               tension: 0.4,
               fill: true,
@@ -154,10 +214,13 @@
             y: {
               min: 0,
               max: 20,
-              ticks: { stepSize: 5, font: { size: 11 } },
-              grid: { color: '#f3f4f6' },
+              ticks: { stepSize: 5, font: { size: 11 }, color: colors.text },
+              grid: { color: colors.grid },
             },
-            x: { ticks: { font: { size: 11 } }, grid: { display: false } },
+            x: {
+              ticks: { font: { size: 11 }, color: colors.text },
+              grid: { display: false },
+            },
           },
         },
       });
@@ -177,11 +240,35 @@
 
   onMounted(async () => {
     await auth.fetchUser();
+    checkPlacementTest();
   });
 </script>
 
 <template>
   <div class="dashboard-container">
+    <!-- Placement test modal -->
+    <Teleport to="body">
+      <div v-if="showPlacementModal" class="placement-modal-overlay" @click.self="placementLater">
+        <div class="placement-modal">
+          <img :src="aceThumbsup" alt="Ace" class="placement-ace" />
+          <h2>Descubra seu nível de inglês!</h2>
+          <p>
+            Faça o teste de nivelamento gratuito (5–8 minutos) e o Ace vai personalizar
+            seus treinos para o seu nível.
+          </p>
+          <button class="pm-btn-primary" @click="placementDoNow">
+            🎯 Fazer agora
+          </button>
+          <button class="pm-btn-ghost" @click="placementLater">
+            Depois
+          </button>
+          <button class="pm-btn-link" @click="placementSkip">
+            Pular e definir manualmente em Configurações
+          </button>
+        </div>
+      </div>
+    </Teleport>
+
     <!-- Header -->
     <div class="header-section">
       <div class="header-text">
@@ -306,6 +393,7 @@
     padding: 24px 20px;
     max-width: 1100px;
     margin: 0 auto;
+    margin-top: 16px;
     width: 100%;
     display: flex;
     flex-direction: column;
@@ -354,8 +442,14 @@
     box-shadow: var(--card-shadow);
   }
   .stat-card.highlight {
-    background: #fff7ed;
-    border: 1px solid #fed7aa;
+    background: #92400e;
+    border: 1px solid #b45309;
+  }
+  .stat-card.highlight .stat-label {
+    color: #fde68a;
+  }
+  .stat-card.highlight .stat-value {
+    color: #fff;
   }
   .stat-label {
     font-size: 11px;
@@ -378,6 +472,7 @@
     border-radius: 16px;
     padding: 20px 24px;
     box-shadow: var(--card-shadow);
+    overflow: hidden;
   }
   .section-title {
     font-size: 15px;
@@ -454,11 +549,13 @@
     position: relative;
     height: 180px;
     width: 100%;
+    max-width: 100%;
   }
   .two-col {
     display: grid;
     grid-template-columns: 1fr;
     gap: 20px;
+    overflow: hidden;
   }
   @media (min-width: 768px) {
     .two-col {
@@ -474,7 +571,7 @@
   .cal-day {
     aspect-ratio: 1;
     border-radius: 4px;
-    background: var(--bg-secondary);
+    background: var(--border);
   }
   .cal-day.cal-active {
     background: var(--accent);
@@ -501,5 +598,78 @@
   }
   .legend-dot.active {
     background: var(--accent);
+  }
+
+  /* Placement test modal */
+  .placement-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+  }
+  .placement-modal {
+    background: var(--card-bg);
+    border-radius: 20px;
+    padding: 28px 24px;
+    max-width: 360px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  }
+  .placement-ace {
+    width: 72px;
+    height: auto;
+  }
+  .placement-modal h2 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-align: center;
+    margin: 0;
+  }
+  .placement-modal p {
+    font-size: 13px;
+    color: var(--text-secondary);
+    text-align: center;
+    line-height: 1.5;
+    margin: 0;
+  }
+  .pm-btn-primary {
+    width: 100%;
+    padding: 12px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 4px;
+  }
+  .pm-btn-ghost {
+    width: 100%;
+    padding: 10px;
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .pm-btn-link {
+    background: none;
+    border: none;
+    color: var(--text-tertiary);
+    font-size: 12px;
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 0;
   }
 </style>
