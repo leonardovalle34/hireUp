@@ -10,6 +10,7 @@ export const plans = [
       'Feedback com IA',
       'Acesso ao dashboard',
       'Histórico de treinos',
+      'Sem acesso ao Tutor de IA',
     ],
     cta: 'Plano atual',
     highlight: false,
@@ -22,7 +23,8 @@ export const plans = [
     color: '#1d4ed8',
     features: [
       '1 simulação por dia inclusa',
-      'Simulações ilimitadas com API key própria',
+      'Entrevistas ilimitadas com API key própria',
+      'Tutor de IA — 30 min/dia',
       'Feedback detalhado com IA',
       'Histórico completo',
       'Todas as áreas profissionais',
@@ -38,7 +40,8 @@ export const plans = [
     color: '#059669',
     features: [
       '3 simulações por dia inclusas',
-      'Simulações ilimitadas com API key própria',
+      'Entrevistas ilimitadas com API key própria',
+      'Tutor de IA — 30 min/dia',
       'Feedback detalhado com IA',
       'Histórico completo',
       'Todas as áreas profissionais',
