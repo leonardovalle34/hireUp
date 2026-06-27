@@ -210,6 +210,17 @@
   }
 
   async function startSession() {
+    const model = localStorage.getItem('userModel') || '';
+    const key = localStorage.getItem('userApiKey') || '';
+
+    if (model && !key) {
+      message.warning(
+        `Você selecionou um modelo externo mas não adicionou uma API key. Vá em Configurações → API Key própria.`,
+        6,
+      );
+      return;
+    }
+
     const plan = (dashboardUser.value as any)?.plan || 'free';
     const hasKey = !!localStorage.getItem('userApiKey');
 
