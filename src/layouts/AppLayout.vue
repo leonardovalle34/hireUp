@@ -19,9 +19,14 @@
   .app-layout {
     min-height: 100vh;
     background: transparent !important;
+    width: 100%;
   }
+
   .app-content {
-    padding: 20px;
+    padding: 64px 16px 80px 16px !important;
     background: transparent !important;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
   }
 </style>

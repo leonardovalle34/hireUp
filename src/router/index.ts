@@ -18,6 +18,9 @@ import InterviewView from '@/views/InterviewView.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import SupportView from '@/views/SupportView.vue';
 import AboutView from '@/views/AboutView.vue';
+import TutorView from '@/views/TutorView.vue';
+import SettingsView from '@/views/SettingsView.vue';
+import PlacementTestView from '@/views/PlacementTestView.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -41,8 +44,16 @@ const router = createRouter({
         { path: 'support', component: SupportView },
         { path: 'about', component: AboutView },
         {
+          path: '/tutor',
+          component: TutorView,
+        },
+        {
           path: 'settings',
-          component: () => import('@/views/SettingsView.vue'),
+          component: SettingsView,
+        },
+        {
+          path: 'placement-test',
+          component: PlacementTestView,
         },
       ],
     },

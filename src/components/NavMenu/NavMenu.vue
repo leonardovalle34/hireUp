@@ -1,74 +1,65 @@
 <script lang="ts">
-  export default { name: 'NavMenu' };
+export default { name: 'NavMenu' };
 </script>
 
 <script setup lang="ts">
-  import { useRouter } from 'vue-router';
-  import {
-    HomeOutlined,
-    AudioOutlined,
-    DollarOutlined,
-    LogoutOutlined,
-    SettingOutlined,
-    CustomerServiceOutlined,
-  } from '@ant-design/icons-vue';
-  import { useScreen } from '@/hooks/useScreen';
-  import { useAuthStore } from '@/stores/auth';
+import { useRouter, useRoute } from 'vue-router';
+import {
+  HomeOutlined,
+  AudioOutlined,
+  BookOutlined,
+  DollarOutlined,
+} from '@ant-design/icons-vue';
 
-  const router = useRouter();
-  const auth = useAuthStore();
-  const { isMobile } = useScreen();
-
-  function logout() {
-    auth.logout();
-  }
+const router = useRouter();
+const route = useRoute();
 </script>
 
 <template>
   <div>
-    <a-menu class="nav-menu" theme="dark" mode="inline">
-      <a-menu-item key="dashboard" @click="router.push('/')">
+    <a-menu class="nav-menu" theme="dark" mode="horizontal" :selectedKeys="[route.path]">
+      <a-menu-item key="/" @click="router.push('/')">
         <HomeOutlined />
-        <span v-if="!isMobile">Dashboard</span>
+        <span class="nav-label">Início</span>
       </a-menu-item>
-
-      <a-menu-item key="lesson" @click="router.push('/interview')">
+      <a-menu-item key="/interview" @click="router.push('/interview')">
         <AudioOutlined />
-        <span v-if="!isMobile">Treino</span>
+        <span class="nav-label">Treino</span>
       </a-menu-item>
-
-      <a-menu-item key="pricing" @click="router.push('/pricing')">
+      <a-menu-item key="/tutor" @click="router.push('/tutor')">
+        <BookOutlined />
+        <span class="nav-label">Tutor</span>
+      </a-menu-item>
+      <a-menu-item key="/pricing" @click="router.push('/pricing')">
         <DollarOutlined />
-        <span v-if="!isMobile">Assinatura</span>
-      </a-menu-item>
-
-      <a-menu-item key="settings" @click="router.push('/settings')">
-        <SettingOutlined />
-        <span v-if="!isMobile">Configurações</span>
-      </a-menu-item>
-
-      <a-menu-item key="support" @click="router.push('/support')">
-        <CustomerServiceOutlined />
-        <span v-if="!isMobile">Suporte</span>
-      </a-menu-item>
-
-      <a-menu-item key="logout" @click="logout">
-        <LogoutOutlined />
-        <span v-if="!isMobile">Sair</span>
+        <span class="nav-label">Planos</span>
       </a-menu-item>
     </a-menu>
   </div>
 </template>
 
 <style scoped>
-  .nav-menu {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-around;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    z-index: 1000;
+.nav-menu {
+  display: flex !important;
+  flex-direction: row !important;
+  justify-content: space-around !important;
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  z-index: 1000 !important;
+}
+
+/* Mobile: esconde o texto */
+.nav-label {
+  display: none;
+}
+
+/* Desktop: mostra o texto */
+@media (min-width: 768px) {
+  .nav-label {
+    display: inline;
+    margin-left: 6px;
   }
+}
 </style>

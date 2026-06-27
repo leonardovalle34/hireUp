@@ -6,9 +6,11 @@
   import { ref, onMounted, computed } from 'vue';
   import { useAuthStore } from '@/stores/auth';
   import { storeToRefs } from 'pinia';
+  import { useRouter } from 'vue-router';
 
   const auth = useAuthStore();
   const { dashboardUser } = storeToRefs(auth);
+  const router = useRouter();
 
   // Tema
   const isDark = ref(false);
@@ -25,6 +27,42 @@
   // Nível
   const englishLevel = ref('');
   const levelSaved = ref(false);
+
+  // Placement test
+  const canTakeTest = computed(() => {
+    const plan = dashboardUser.value?.plan;
+    const testDone = (dashboardUser.value as any)?.placement_test_done;
+    const testDoneAt = (dashboardUser.value as any)?.placement_test_done_at;
+
+    if (!testDone) return true;
+
+    if (plan === 'free') return false;
+
+    if (testDoneAt) {
+      const lastTest = new Date(testDoneAt);
+      const now = new Date();
+      const diffDays = (now.getTime() - lastTest.getTime()) / (1000 * 60 * 60 * 24);
+      return diffDays >= 30;
+    }
+
+    return true;
+  });
+
+  const testBlockedReason = computed(() => {
+    const plan = dashboardUser.value?.plan;
+    const testDoneAt = (dashboardUser.value as any)?.placement_test_done_at;
+
+    if (plan === 'free') return 'Plano Free permite apenas 1 teste de nivelamento.';
+
+    if (testDoneAt) {
+      const lastTest = new Date(testDoneAt);
+      const now = new Date();
+      const diffDays = Math.ceil(30 - (now.getTime() - lastTest.getTime()) / (1000 * 60 * 60 * 24));
+      return `Você pode refazer o teste em ${diffDays} dias.`;
+    }
+
+    return '';
+  });
 
   // Delete account
   const showDeleteConfirm = ref(false);
@@ -151,6 +189,11 @@
 
     const savedModel = localStorage.getItem('userModel');
     if (savedModel) selectedModel.value = savedModel;
+
+    // Carrega o nível atual do perfil
+    if (dashboardUser.value?.english_level) {
+      englishLevel.value = dashboardUser.value.english_level;
+    }
   });
 </script>
 
@@ -197,8 +240,7 @@
     </div>
 
     <!-- Modelo de IA -->
-    <!-- Modelo de IA -->
-    <div class="settings-card">
+    <div v-if="dashboardUser?.plan !== 'free'" class="settings-card">
       <h2 class="card-title">🤖 Modelo de IA</h2>
       <p class="card-desc">
         Escolha o modelo usado nas simulações de entrevista.
@@ -241,7 +283,14 @@
     </div>
 
     <!-- API Key -->
-    <div class="settings-card">
+    <div v-if="dashboardUser?.plan === 'free'" class="settings-card">
+      <h2 class="card-title">🔑 API Key própria</h2>
+      <p class="card-desc">
+        Use sua própria API key para entrevistas ilimitadas e acesso ao Tutor de IA. Disponível nos planos pagos.
+      </p>
+      <button class="btn-primary" @click="router.push('/pricing')">Ver planos</button>
+    </div>
+    <div v-else class="settings-card">
       <h2 class="card-title">🔑 API Key própria</h2>
       <p class="card-desc">
         Use sua própria API key para simulações ilimitadas. Sua chave é salva
@@ -290,6 +339,35 @@
       </select>
       <button class="btn-primary" @click="saveLevel" :disabled="!englishLevel">
         {{ levelSaved ? '✅ Salvo!' : 'Salvar nível' }}
+      </button>
+    </div>
+
+    <!-- Teste de Nivelamento -->
+    <div class="settings-card">
+      <h2 class="card-title">🎯 Teste de Nivelamento</h2>
+      <p class="card-desc">
+        Descubra seu nível de inglês com um teste completo de pronúncia, gramática e conversação.
+      </p>
+
+      <div v-if="(dashboardUser as any)?.placement_test_done_at" class="test-info">
+        <p class="setting-desc">
+          Último teste: {{ new Date((dashboardUser as any).placement_test_done_at).toLocaleDateString('pt-BR') }}
+        </p>
+        <p class="setting-desc">
+          Nível atual: <strong>{{ (dashboardUser as any)?.english_level || 'beginner' }}</strong>
+        </p>
+      </div>
+
+      <div v-if="!canTakeTest" class="model-info warning">
+        {{ testBlockedReason }}
+      </div>
+
+      <button
+        class="btn-primary"
+        :disabled="!canTakeTest"
+        @click="router.push('/placement-test')"
+      >
+        {{ canTakeTest ? '🎯 Fazer teste agora' : '🔒 Teste indisponível' }}
       </button>
     </div>
 
@@ -345,6 +423,7 @@
     max-width: 600px;
     margin: 0 auto;
     padding: 24px 20px 80px;
+    padding-top: 16px;
     display: flex;
     flex-direction: column;
     gap: 16px;
@@ -352,7 +431,7 @@
   .page-title {
     font-size: 22px;
     font-weight: 700;
-    color: var(--text-primary);
+    color: white !important;
     margin-bottom: 4px;
   }
   .settings-card {
@@ -418,6 +497,8 @@
     display: flex;
     gap: 8px;
     align-items: center;
+    overflow: hidden;
+    max-width: 100%;
   }
   .input {
     flex: 1;
@@ -429,6 +510,8 @@
     font-family: monospace;
     background: var(--card-bg);
     color: var(--text-primary);
+    min-width: 0;
+    max-width: 100%;
   }
   .input:focus {
     border-color: var(--accent);
