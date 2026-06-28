@@ -30,6 +30,10 @@ const route = useRoute();
         <BookOutlined />
         <span class="nav-label">Tutor</span>
       </a-menu-item>
+      <a-menu-item key="/lessons" @click="router.push('/lessons')">
+        <BookOutlined />
+        <span class="nav-label">Aulas</span>
+      </a-menu-item>
       <a-menu-item key="/pricing" @click="router.push('/pricing')">
         <DollarOutlined />
         <span class="nav-label">Planos</span>

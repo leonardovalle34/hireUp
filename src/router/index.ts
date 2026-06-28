@@ -55,6 +55,14 @@ const router = createRouter({
           path: 'placement-test',
           component: PlacementTestView,
         },
+        {
+          path: 'lessons',
+          component: () => import('@/views/LessonsView.vue'),
+        },
+        {
+          path: 'lesson/:id',
+          component: () => import('@/views/LessonView.vue'),
+        },
       ],
     },
   ],

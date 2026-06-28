@@ -7,5 +7,6 @@ CREATE TABLE IF NOT EXISTS tutor_sessions (
 );
 
 ALTER TABLE tutor_sessions ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users can manage own tutor sessions" ON tutor_sessions;
 CREATE POLICY "Users can manage own tutor sessions" ON tutor_sessions
   FOR ALL USING (auth.uid() = user_id);

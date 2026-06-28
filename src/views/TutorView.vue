@@ -386,6 +386,13 @@
       activeModel.value = saved;
       activeModelLabel.value = modelLabels[saved] || saved;
     }
+
+    const savedTopic = localStorage.getItem('tutorTopic');
+    if (savedTopic) {
+      topic.value = savedTopic;
+      mode.value = 'lesson';
+      localStorage.removeItem('tutorTopic');
+    }
   });
 
   onUnmounted(() => {
