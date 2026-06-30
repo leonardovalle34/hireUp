@@ -1,6 +1,7 @@
 <script setup lang="ts">
   import NavMenu from '@/components/NavMenu/NavMenu.vue';
   import Header from '@/components/Header/Header.vue';
+  import InstallPwaModal from '@/components/InstallPwaModal/InstallPwaModal.vue';
 </script>
 
 <template>
@@ -12,6 +13,7 @@
         <NavMenu />
       </a-layout-content>
     </a-layout>
+    <InstallPwaModal />
   </a-layout>
 </template>
 
