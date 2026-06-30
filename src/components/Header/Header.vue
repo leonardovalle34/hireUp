@@ -30,24 +30,6 @@
     closeMenu();
   }
 
-  let deferredPrompt: any = null;
-  const canInstall = ref(false);
-
-  const installApp = () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      deferredPrompt.userChoice.then(() => {
-        deferredPrompt = null;
-        canInstall.value = false;
-      });
-    }
-  };
-
-  window.addEventListener('beforeinstallprompt', (e: any) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    canInstall.value = true;
-  });
 </script>
 <template>
   <a-layout-header class="header">
@@ -58,14 +40,6 @@
     <div class="avatar-wrap">
       <button class="avatar-btn" @click="toggleMenu">{{ avatarLetter }}</button>
       <div v-if="menuOpen" class="avatar-menu">
-        <button
-          @click="
-            router.push('/news');
-            closeMenu();
-          "
-        >
-          📰 Notícias
-        </button>
         <button
           @click="
             router.push('/badges');

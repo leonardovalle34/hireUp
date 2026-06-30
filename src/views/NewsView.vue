@@ -101,8 +101,8 @@ onMounted(async () => {
   gap: 18px;
 }
 .news-header { text-align: center; }
-.news-header h1 { font-size: 22px; font-weight: 700; color: var(--text-primary); }
-.subtitle { font-size: 14px; color: var(--text-secondary); margin-top: 4px; }
+.news-header h1 { font-size: 22px; font-weight: 700; color: white; }
+.subtitle { font-size: 14px; color: rgba(255, 255, 255, 0.7); margin-top: 4px; }
 .category-filters { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
 .filter-btn {
   padding: 6px 14px;
