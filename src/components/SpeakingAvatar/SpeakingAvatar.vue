@@ -1,90 +1,111 @@
 <script lang="ts">
-  export default {
-    name: 'SpeakingAvatar',
-  };
+export default { name: 'SpeakingAvatar' };
 </script>
-<script lang="ts" setup>
-  import { ref, watch } from 'vue';
-  import { RedoOutlined } from '@ant-design/icons-vue';
 
-  const Props = defineProps<{
-    isSpeaking: boolean;
-    question: string;
-  }>();
+<script setup lang="ts">
+import { ref, watch, onUnmounted } from 'vue';
 
-  const isSpeaking = ref(false);
+const aceThinking = new URL('../../assets/ace/ace-thinking.png', import.meta.url).href;
+const aceMicrophone = new URL('../../assets/ace/ace-microphone.png', import.meta.url).href;
 
-  const speak = (text: string) => {
-    if (isSpeaking.value) return;
+const props = defineProps<{
+  text: string;
+  autoSpeak?: boolean;
+  lang?: string;
+}>();
 
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'en-US';
-    utterance.rate = 1;
-    utterance.pitch = 1;
+const isSpeaking = ref(false);
+let speakTimer: ReturnType<typeof setTimeout> | null = null;
 
-    utterance.onstart = () => {
-      isSpeaking.value = true;
-    };
+function cleanTextForSpeech(text: string): string {
+  return text
+    .replace(/[\u{1F000}-\u{1FFFF}]/gu, '')
+    .replace(/[☀-➿]/gu, '')
+    .replace(/#|\*|_|`/g, '')
+    .replace(/\n+/g, '. ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
 
-    utterance.onend = () => {
-      isSpeaking.value = false;
-    };
+function speak() {
+  if (speakTimer) clearTimeout(speakTimer);
+  window.speechSynthesis.cancel();
 
-    speechSynthesis.speak(utterance);
-  };
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  if (isIOS) return;
 
-  watch(
-    () => Props.isSpeaking,
-    (newVal) => {
-      if (newVal) {
-        speak(Props.question);
-      }
-    },
-  );
+  try {
+    const clean = cleanTextForSpeech(props.text);
+    if (!clean) return;
+
+    const utterance = new SpeechSynthesisUtterance(clean);
+    utterance.lang = props.lang || 'en-US';
+    utterance.rate = 0.9;
+    utterance.pitch = 0.8;
+    utterance.volume = 1;
+
+    utterance.onstart = () => { isSpeaking.value = true; };
+    utterance.onend = () => { isSpeaking.value = false; };
+    utterance.onerror = () => { isSpeaking.value = false; };
+
+    window.speechSynthesis.speak(utterance);
+    speakTimer = setTimeout(() => { isSpeaking.value = false; }, 30000);
+  } catch {
+    isSpeaking.value = false;
+  }
+}
+
+watch(() => props.text, (newText) => {
+  if (props.autoSpeak && newText) speak();
+});
+
+onUnmounted(() => {
+  window.speechSynthesis.cancel();
+  if (speakTimer) clearTimeout(speakTimer);
+});
+
+defineExpose({ speak, isSpeaking });
 </script>
+
 <template>
-  <div class="avatar-container">
+  <div class="speaking-avatar">
     <img
-      src="/avatar.png"
-      alt="Avatar"
-      class="avatar"
+      :src="isSpeaking ? aceMicrophone : aceThinking"
+      alt="Ace"
+      class="ace"
       :class="{ speaking: isSpeaking }"
     />
-    <a-button
-      type="primary"
-      @click="speak(Props.question)"
-      style="width: 20px"
-      v-if="!isSpeaking"
-    >
-      <div
-        style="
-          width: 100%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        "
-      >
-        <RedoOutlined />
-      </div>
-    </a-button>
+    <button v-if="!isSpeaking && text" class="btn-listen" @click="speak">
+      🔊 Ouvir novamente
+    </button>
   </div>
 </template>
+
 <style scoped>
-  .avatar-container {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    margin-bottom: 100px;
-    gap: 10px;
-  }
-
-  .avatar {
-    width: 120px;
-    transition: transform 0.3s ease;
-  }
-
-  .speaking {
-    transform: scale(1.05);
-  }
+.speaking-avatar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.ace {
+  width: 90px;
+  height: auto;
+}
+.ace.speaking {
+  animation: pulse 0.6s ease-in-out infinite alternate;
+}
+@keyframes pulse {
+  from { transform: scale(1.04); }
+  to { transform: scale(1.1); }
+}
+.btn-listen {
+  background: none;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
 </style>

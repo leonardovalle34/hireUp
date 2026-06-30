@@ -3,7 +3,6 @@
 </script>
 
 <script setup lang="ts">
-  import { useRouter, useRoute } from 'vue-router';
   import {
     HomeOutlined,
     AudioOutlined,
@@ -14,84 +13,64 @@
     DollarOutlined,
   } from '@ant-design/icons-vue';
 
-  const router = useRouter();
-  const route = useRoute();
+  const items = [
+    { path: '/', label: 'Início', icon: HomeOutlined },
+    { path: '/interview', label: 'Treino', icon: AudioOutlined },
+    { path: '/tutor', label: 'Tutor', icon: BookOutlined },
+    { path: '/lessons', label: 'Aulas', icon: ProfileOutlined },
+    { path: '/quiz', label: 'Quiz', icon: BulbOutlined },
+    { path: '/news', label: 'Notícias', icon: ReadOutlined },
+    { path: '/pricing', label: 'Planos', icon: DollarOutlined },
+  ];
 </script>
 
 <template>
-  <div>
-    <a-menu
-      class="nav-menu"
-      theme="dark"
-      mode="horizontal"
-      :selectedKeys="[route.path]"
+  <nav class="nav-menu">
+    <router-link
+      v-for="item in items"
+      :key="item.path"
+      :to="item.path"
+      class="nav-item"
+      :class="{ 'nav-item--active': $route.path === item.path }"
     >
-      <a-menu-item key="/" @click="router.push('/')">
-        <HomeOutlined />
-        <span class="nav-label">Início</span>
-      </a-menu-item>
-      <a-menu-item key="/interview" @click="router.push('/interview')">
-        <AudioOutlined />
-        <span class="nav-label">Treino</span>
-      </a-menu-item>
-      <a-menu-item key="/tutor" @click="router.push('/tutor')">
-        <BookOutlined />
-        <span class="nav-label">Tutor</span>
-      </a-menu-item>
-      <a-menu-item key="/lessons" @click="router.push('/lessons')">
-        <ProfileOutlined />
-        <span class="nav-label">Aulas</span>
-      </a-menu-item>
-      <a-menu-item key="/quiz" @click="router.push('/quiz')">
-        <BulbOutlined />
-        <span class="nav-label">Quiz</span>
-      </a-menu-item>
-      <a-menu-item key="/news" @click="router.push('/news')">
-        <ReadOutlined />
-        <span class="nav-label">Notícias</span>
-      </a-menu-item>
-
-      <a-menu-item key="/pricing" @click="router.push('/pricing')">
-        <DollarOutlined />
-        <span class="nav-label">Planos</span>
-      </a-menu-item>
-    </a-menu>
-  </div>
+      <component :is="item.icon" class="nav-icon" />
+      <span class="nav-label">{{ item.label }}</span>
+    </router-link>
+  </nav>
 </template>
 
 <style scoped>
   .nav-menu {
-    display: flex !important;
-    flex-direction: row !important;
-    justify-content: space-between !important;
-    position: fixed !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    width: 100% !important;
-    z-index: 1000 !important;
-    padding: 4px 4px !important;
-    overflow: hidden !important;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+    padding: 4px 4px;
+    background: #001529; /* mesma cor do theme="dark" do antd, ajuste se precisar */
   }
 
-  .nav-menu :deep(.ant-menu-item) {
+  .nav-item {
     flex: 1 1 0;
     min-width: 0;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    justify-content: center !important;
-    padding: 4px 2px !important;
-    margin: 0 !important;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 2px;
+    color: rgba(255, 255, 255, 0.65);
+    text-decoration: none;
   }
 
-  .nav-menu :deep(.anticon) {
-    font-size: 16px !important;
-    margin: 0 !important;
+  .nav-item--active {
+    color: #fff;
   }
 
-  .nav-menu :deep(.ant-menu-title-content) {
-    font-size: 9px !important;
-    margin: 2px 0 0 0 !important;
+  .nav-icon {
+    font-size: 16px;
   }
 
   .nav-label {
@@ -102,6 +81,7 @@
     .nav-label {
       display: inline;
       font-size: 10px;
+      margin-top: 2px;
     }
   }
 </style>
