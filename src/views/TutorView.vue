@@ -11,19 +11,10 @@
   import { message } from 'ant-design-vue';
   import { supabase } from '@/lib/supabase';
   import { getLessons } from '@/services/lessons';
+  import SpeakingAvatar from '@/components/SpeakingAvatar/SpeakingAvatar.vue';
 
   const aceWaving = new URL('../assets/ace/ace-waving.png', import.meta.url)
     .href;
-  const aceThinking = new URL('../assets/ace/ace-thinking.png', import.meta.url)
-    .href;
-  const aceMicrophone = new URL(
-    '../assets/ace/ace-microphone.png',
-    import.meta.url,
-  ).href;
-  const aceSurprised = new URL(
-    '../assets/ace/ace-surprised.png',
-    import.meta.url,
-  ).href;
 
   const router = useRouter();
   const auth = useAuthStore();
@@ -37,9 +28,11 @@
   const history = ref<{ role: string; content: string }[]>([]);
   const isLoading = ref(false);
   const isRecording = ref(false);
-  const isSpeaking = ref(false);
-  const questionReady = ref(false);
+  const speakingAvatarRef = ref<InstanceType<typeof SpeakingAvatar> | null>(
+    null,
+  );
   const tutorMessage = ref('');
+  const tutorSpeechText = ref('');
   const tutorName = ref('');
   const audioBlob = ref<Blob | null>(null);
   const audioUrl = ref<string | null>(null);
@@ -60,7 +53,6 @@
 
   let mediaRecorder: MediaRecorder | null = null;
   let chunks: Blob[] = [];
-  let speakTimer: ReturnType<typeof setTimeout> | null = null;
 
   const TUTOR_DAILY_LIMIT_MS = 30 * 60 * 1000;
 
@@ -107,12 +99,11 @@
     return infos[level.value] || infos.beginner;
   });
 
-  const aceImage = computed(() => {
-    if (isLoading.value) return aceThinking;
-    if (isSpeaking.value) return aceMicrophone;
-    if (stage.value === 'intro') return aceWaving;
-    return aceSurprised;
-  });
+  const speechLang = computed(() =>
+    level.value === 'beginner' || level.value === 'elementary'
+      ? 'pt-BR'
+      : 'en-US',
+  );
 
   const levelOrder = ['beginner', 'elementary', 'intermediate', 'advanced', 'business'];
 
@@ -132,93 +123,6 @@
       }));
     } catch (err) {
       console.error('Erro ao carregar tópicos', err);
-    }
-  }
-
-  function speakTutor(text: string) {
-    if (speakTimer) clearTimeout(speakTimer);
-    window.speechSynthesis.cancel();
-    questionReady.value = true;
-
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    if (isIOS) return;
-
-    try {
-      const clean = cleanTextForSpeech(text);
-      const utterance = new SpeechSynthesisUtterance(clean);
-      utterance.lang =
-        level.value === 'beginner' || level.value === 'elementary'
-          ? 'pt-BR'
-          : 'en-US';
-      utterance.rate = 1.1; // um pouco mais rápido
-      utterance.pitch = level.value === 'advanced' ? 1.1 : 0.9;
-      utterance.volume = 1;
-
-      utterance.onstart = () => {
-        isSpeaking.value = true;
-        questionReady.value = false;
-      };
-      utterance.onend = () => {
-        isSpeaking.value = false;
-      };
-      utterance.onerror = () => {
-        isSpeaking.value = false;
-      };
-
-      window.speechSynthesis.speak(utterance);
-      speakTimer = setTimeout(() => {
-        isSpeaking.value = false;
-      }, 30000);
-    } catch {
-      // fallback
-    }
-  }
-
-  function cleanTextForSpeech(text: string): string {
-    return text
-      .replace(/[\u{1F000}-\u{1FFFF}]/gu, '') // remove emojis
-      .replace(/[\u2600-\u27BF]/gu, '') // remove símbolos
-      .replace(/#/g, '') // remove cerquilha
-      .replace(/\*/g, '') // remove asterisco
-      .replace(/_/g, '') // remove underscore
-      .replace(/`/g, '') // remove backtick
-      .replace(/\n+/g, '. ') // quebras de linha viram pausa
-      .replace(/\s+/g, ' ') // espaços duplos
-      .trim();
-  }
-
-  function speakText(text: string) {
-    if (speakTimer) clearTimeout(speakTimer);
-    window.speechSynthesis.cancel();
-    questionReady.value = false;
-
-    try {
-      const clean = cleanTextForSpeech(text);
-      const utterance = new SpeechSynthesisUtterance(clean);
-      utterance.lang =
-        level.value === 'beginner' || level.value === 'elementary'
-          ? 'pt-BR'
-          : 'en-US';
-      utterance.rate = 1.1;
-      utterance.pitch = level.value === 'advanced' ? 1.1 : 0.9;
-      utterance.volume = 1;
-
-      utterance.onstart = () => {
-        isSpeaking.value = true;
-      };
-      utterance.onend = () => {
-        isSpeaking.value = false;
-      };
-      utterance.onerror = () => {
-        isSpeaking.value = false;
-      };
-
-      window.speechSynthesis.speak(utterance);
-      speakTimer = setTimeout(() => {
-        isSpeaking.value = false;
-      }, 30000);
-    } catch {
-      isSpeaking.value = false;
     }
   }
 
@@ -284,7 +188,6 @@
     audioBlob.value = null;
     audioUrl.value = null;
     hasRecorded.value = false;
-    questionReady.value = false;
 
     try {
       const form = new FormData();
@@ -319,9 +222,9 @@
 
       history.value = data.history;
       tutorMessage.value = data.tutor_response;
+      tutorSpeechText.value = data.tutor_response_clean || data.tutor_response;
       tutorName.value = data.tutor_name;
       isLoading.value = false;
-      speakTutor(data.tutor_response_clean || data.tutor_response);
     } catch (err: any) {
       message.error(err.message || 'Erro de comunicação.', 5);
       isLoading.value = false;
@@ -407,12 +310,11 @@
     stage.value = 'intro';
     history.value = [];
     tutorMessage.value = '';
+    tutorSpeechText.value = '';
     audioBlob.value = null;
     if (audioUrl.value) URL.revokeObjectURL(audioUrl.value);
     audioUrl.value = null;
     hasRecorded.value = false;
-    isSpeaking.value = false;
-    questionReady.value = false;
     window.speechSynthesis.cancel();
   }
 
@@ -448,7 +350,6 @@
       addTutorTime(Date.now() - sessionStartTime.value);
     }
     window.speechSynthesis.cancel();
-    if (speakTimer) clearTimeout(speakTimer);
     if (audioUrl.value) URL.revokeObjectURL(audioUrl.value);
   });
 </script>
@@ -542,11 +443,11 @@
         <button class="btn-end" @click="endSession">✕ Encerrar</button>
       </div>
 
-      <img
-        :src="aceImage"
-        alt="Ace"
-        class="ace"
-        :class="{ speaking: isSpeaking }"
+      <SpeakingAvatar
+        :text="tutorSpeechText"
+        :auto-speak="true"
+        :lang="speechLang"
+        ref="speakingAvatarRef"
       />
 
       <!-- Loading -->
@@ -558,13 +459,6 @@
       <!-- Mensagem do tutor -->
       <div v-if="!isLoading && tutorMessage" class="message-box">
         <p>{{ tutorMessage }}</p>
-        <button
-          class="btn-listen"
-          :class="{ 'btn-listen-pulse': questionReady }"
-          @click="speakText(tutorMessage)"
-        >
-          🔊 {{ questionReady ? 'Toque para ouvir' : 'Ouvir novamente' }}
-        </button>
       </div>
 
       <!-- Histórico resumido -->
@@ -630,17 +524,6 @@
   .ace {
     width: 90px;
     height: auto;
-  }
-  .ace.speaking {
-    animation: pulse 0.6s ease-in-out infinite alternate;
-  }
-  @keyframes pulse {
-    from {
-      transform: scale(1.04);
-    }
-    to {
-      transform: scale(1.1);
-    }
   }
   .tutor-info {
     display: flex;
@@ -809,34 +692,6 @@
     line-height: 1.6;
     font-weight: 500;
     margin: 0;
-  }
-  .btn-listen {
-    background: none;
-    border: 1px solid var(--accent);
-    color: var(--accent);
-    padding: 8px 16px;
-    border-radius: 8px;
-    font-size: 13px;
-    cursor: pointer;
-    align-self: flex-start;
-    transition: all 0.2s;
-  }
-  .btn-listen:hover {
-    background: var(--bg-secondary);
-  }
-  .btn-listen-pulse {
-    background: var(--accent);
-    color: white;
-    border-color: var(--accent);
-    animation: attention 1s ease-in-out infinite alternate;
-  }
-  @keyframes attention {
-    from {
-      transform: scale(1);
-    }
-    to {
-      transform: scale(1.03);
-    }
   }
   .history-hint {
     font-size: 12px;

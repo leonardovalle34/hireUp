@@ -9,10 +9,9 @@
   import { useInterviewStore } from '@/stores/interview';
   import { storeToRefs } from 'pinia';
   import { message } from 'ant-design-vue';
+  import SpeakingAvatar from '@/components/SpeakingAvatar/SpeakingAvatar.vue';
 
   const aceWaving = new URL('../assets/ace/ace-waving.png', import.meta.url)
-    .href;
-  const aceThinking = new URL('../assets/ace/ace-thinking.png', import.meta.url)
     .href;
   const aceCelebrating = new URL(
     '../assets/ace/ace-celebrating.png',
@@ -21,14 +20,6 @@
   const aceThumbsup = new URL('../assets/ace/ace-thumbsup.png', import.meta.url)
     .href;
   const aceSad = new URL('../assets/ace/ace-sad.png', import.meta.url).href;
-  const aceMicrophone = new URL(
-    '../assets/ace/ace-microphone.png',
-    import.meta.url,
-  ).href;
-  const aceSurprised = new URL(
-    '../assets/ace/ace-surprised.png',
-    import.meta.url,
-  ).href;
 
   const router = useRouter();
   const auth = useAuthStore();
@@ -41,8 +32,9 @@
   const currentQuestion = ref('');
   const isLoading = ref(false);
   const isRecording = ref(false);
-  const isSpeaking = ref(false);
-  const questionReady = ref(false);
+  const speakingAvatarRef = ref<InstanceType<typeof SpeakingAvatar> | null>(
+    null,
+  );
   const feedback = ref<any>(null);
   const audioBlob = ref<Blob | null>(null);
   const audioUrl = ref<string | null>(null);
@@ -60,16 +52,8 @@
 
   let mediaRecorder: MediaRecorder | null = null;
   let chunks: Blob[] = [];
-  let speakTimer: ReturnType<typeof setTimeout> | null = null;
 
   const area = 'general'; // A IA descobre a área na primeira pergunta
-
-  const aceInterviewImage = computed(() => {
-    if (isLoading.value) return aceThinking;
-    if (isSpeaking.value) return aceMicrophone;
-    if (turn.value === 0) return aceWaving;
-    return aceSurprised;
-  });
 
   const aceFeedbackImage = computed(() => {
     if (!feedback.value) return aceWaving;
@@ -77,78 +61,6 @@
     if (feedback.value.score >= 8) return aceThumbsup;
     return aceSad;
   });
-
-  function speakNoBlock(text: string) {
-    if (speakTimer) clearTimeout(speakTimer);
-    window.speechSynthesis.cancel();
-    questionReady.value = true;
-
-    // Detecta iOS
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-
-    if (isIOS) {
-      // iOS bloqueia autoplay — usuário usa o botão
-      return;
-    }
-
-    // Desktop e Android — tenta autoplay
-    try {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'en-US';
-      utterance.rate = 0.9;
-      utterance.pitch = 0.5;
-      utterance.volume = 1;
-
-      utterance.onstart = () => {
-        isSpeaking.value = true;
-        questionReady.value = false;
-      };
-      utterance.onend = () => {
-        isSpeaking.value = false;
-      };
-      utterance.onerror = () => {
-        isSpeaking.value = false;
-      };
-
-      window.speechSynthesis.speak(utterance);
-      speakTimer = setTimeout(() => {
-        isSpeaking.value = false;
-      }, 20000);
-    } catch {
-      // fallback — usuário usa o botão
-    }
-  }
-
-  function speakText(text: string) {
-    if (speakTimer) clearTimeout(speakTimer);
-    window.speechSynthesis.cancel();
-    questionReady.value = false;
-
-    try {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'en-US';
-      utterance.rate = 0.9;
-      utterance.pitch = 0.5;
-      utterance.volume = 1;
-
-      utterance.onstart = () => {
-        isSpeaking.value = true;
-      };
-      utterance.onend = () => {
-        isSpeaking.value = false;
-      };
-      utterance.onerror = () => {
-        isSpeaking.value = false;
-      };
-
-      window.speechSynthesis.speak(utterance);
-      speakTimer = setTimeout(() => {
-        isSpeaking.value = false;
-      }, 20000);
-    } catch {
-      isSpeaking.value = false;
-    }
-  }
 
   async function startInterview() {
     isLoading.value = true;
@@ -190,7 +102,6 @@
       audioBlob.value = null;
       audioUrl.value = null;
       hasRecorded.value = false;
-      questionReady.value = false;
       isLoading.value = false;
       await callApi(null);
     } catch (err: any) {
@@ -204,7 +115,6 @@
     audioBlob.value = null;
     audioUrl.value = null;
     hasRecorded.value = false;
-    questionReady.value = false;
 
     try {
       const form = new FormData();
@@ -252,7 +162,6 @@
       currentQuestion.value = data.next_question!;
       history.value.push({ question: data.next_question!, answer: '' });
       isLoading.value = false;
-      speakNoBlock(data.next_question!);
     } catch (err: any) {
       const errMsg = interviewStore.error || err.message || '';
       if (
@@ -344,8 +253,6 @@
     if (audioUrl.value) URL.revokeObjectURL(audioUrl.value);
     audioUrl.value = null;
     hasRecorded.value = false;
-    isSpeaking.value = false;
-    questionReady.value = false;
     window.speechSynthesis.cancel();
 
     // Atualiza modelo ao voltar pra intro
@@ -362,7 +269,6 @@
 
   onUnmounted(() => {
     window.speechSynthesis.cancel();
-    if (speakTimer) clearTimeout(speakTimer);
     if (audioUrl.value) URL.revokeObjectURL(audioUrl.value);
   });
 </script>
@@ -409,11 +315,10 @@
       </div>
       <p class="progress-label">Pergunta {{ turn }} de 8</p>
 
-      <img
-        :src="aceInterviewImage"
-        alt="Ace"
-        class="ace"
-        :class="{ speaking: isSpeaking }"
+      <SpeakingAvatar
+        :text="currentQuestion"
+        :auto-speak="true"
+        ref="speakingAvatarRef"
       />
 
       <div v-if="isLoading" class="loading">
@@ -423,16 +328,6 @@
 
       <div v-if="!isLoading && currentQuestion" class="question-box">
         <p>{{ currentQuestion }}</p>
-        <button
-          class="btn-listen"
-          :class="{ 'btn-listen-pulse': questionReady }"
-          @click="speakText(currentQuestion)"
-        >
-          🔊
-          {{
-            questionReady ? 'Toque para ouvir a pergunta' : 'Ouvir novamente'
-          }}
-        </button>
       </div>
 
       <div v-if="!isLoading" class="controls">
@@ -570,17 +465,6 @@
     width: 90px;
     height: auto;
   }
-  .ace.speaking {
-    animation: pulse 0.6s ease-in-out infinite alternate;
-  }
-  @keyframes pulse {
-    from {
-      transform: scale(1.04);
-    }
-    to {
-      transform: scale(1.1);
-    }
-  }
   .model-badge {
     padding: 6px 14px;
     border-radius: 20px;
@@ -651,34 +535,6 @@
     line-height: 1.6;
     font-weight: 500;
     margin: 0;
-  }
-  .btn-listen {
-    background: none;
-    border: 1px solid var(--accent);
-    color: var(--accent);
-    padding: 8px 16px;
-    border-radius: 8px;
-    font-size: 13px;
-    cursor: pointer;
-    align-self: flex-start;
-    transition: all 0.2s;
-  }
-  .btn-listen:hover {
-    background: var(--bg-secondary);
-  }
-  .btn-listen-pulse {
-    background: var(--accent);
-    color: white;
-    border-color: var(--accent);
-    animation: attention 1s ease-in-out infinite alternate;
-  }
-  @keyframes attention {
-    from {
-      transform: scale(1);
-    }
-    to {
-      transform: scale(1.03);
-    }
   }
   .controls {
     display: flex;
