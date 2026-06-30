@@ -8,6 +8,7 @@ export default { name: 'PlacementTestView' };
   import { usePlacementTestStore } from '@/stores/placementTest';
   import { useAuthStore } from '@/stores/auth';
   import { message } from 'ant-design-vue';
+  import SpeakingAvatar from '@/components/SpeakingAvatar/SpeakingAvatar.vue';
 
   const aceWaving = new URL('../assets/ace/ace-waving.png', import.meta.url).href;
   const aceThinking = new URL('../assets/ace/ace-thinking.png', import.meta.url).href;
@@ -30,6 +31,9 @@ export default { name: 'PlacementTestView' };
   const hasRecorded = ref(false);
   const audioBlob = ref<Blob | null>(null);
   const audioUrl = ref<string | null>(null);
+  const speakingAvatarRef = ref<InstanceType<typeof SpeakingAvatar> | null>(
+    null,
+  );
 
   // ── Quiz ──────────────────────────────────────────────────────────────────
   const QUIZ_QUESTIONS = [
@@ -89,37 +93,6 @@ export default { name: 'PlacementTestView' };
     final_score: number;
     breakdown: Record<string, number>;
   } | null>(null);
-
-  // ── Speech synthesis ──────────────────────────────────────────────────────
-  let speakTimer: ReturnType<typeof setTimeout> | null = null;
-
-  function cleanTextForSpeech(text: string): string {
-    return text
-      .replace(/[\u{1F000}-\u{1FFFF}]/gu, '')
-      .replace(/[☀-➿]/gu, '')
-      .replace(/#|\*|_|`/g, '')
-      .replace(/\n+/g, '. ')
-      .replace(/\s+/g, ' ')
-      .trim();
-  }
-
-  function speakText(text: string) {
-    if (speakTimer) clearTimeout(speakTimer);
-    window.speechSynthesis.cancel();
-
-    try {
-      const clean = cleanTextForSpeech(text);
-      const utterance = new SpeechSynthesisUtterance(clean);
-      utterance.lang = 'en-US';
-      utterance.rate = 0.9;
-      utterance.pitch = 0.8;
-      utterance.volume = 1;
-      window.speechSynthesis.speak(utterance);
-      speakTimer = setTimeout(() => {}, 20000);
-    } catch {
-      // fallback
-    }
-  }
 
   // ── Recording ─────────────────────────────────────────────────────────────
   let mediaRecorder: MediaRecorder | null = null;
@@ -210,7 +183,6 @@ export default { name: 'PlacementTestView' };
     if (screen.value === 'quiz') return aceSurprised;
     if (screen.value === 'pronunciation') return aceMicrophone;
     if (screen.value === 'interpretation') return aceReading;
-    if (screen.value === 'conversation') return aceSurprised;
     if (screen.value === 'result') {
       const s = result.value?.final_score ?? 0;
       return s >= 56 ? aceCelebrating : aceThumbsup;
@@ -339,7 +311,6 @@ export default { name: 'PlacementTestView' };
       const data = await store.call(form);
       convAiMessage.value = data.ai_response || '';
       convHistory.value = data.history || [];
-      if (convAiMessage.value) speakText(convAiMessage.value);
     } catch (err: any) {
       message.error(err.message, 4);
     } finally {
@@ -359,7 +330,6 @@ export default { name: 'PlacementTestView' };
       if (data.score) convScores.push(data.score);
       convHistory.value = data.history || convHistory.value;
       convAiMessage.value = data.ai_response || '';
-      if (convAiMessage.value) speakText(convAiMessage.value);
     } catch (err: any) {
       message.error(err.message, 4);
     } finally {
@@ -453,7 +423,6 @@ export default { name: 'PlacementTestView' };
   onUnmounted(() => {
     if (audioUrl.value) URL.revokeObjectURL(audioUrl.value);
     window.speechSynthesis.cancel();
-    if (speakTimer) clearTimeout(speakTimer);
   });
 </script>
 
@@ -471,7 +440,13 @@ export default { name: 'PlacementTestView' };
     </div>
 
     <div class="pt-card">
-      <img :src="aceImage" alt="Ace" class="ace" :class="{ pulse: isRecording }" />
+      <SpeakingAvatar
+        v-if="screen === 'conversation'"
+        :text="convAiMessage"
+        :auto-speak="true"
+        ref="speakingAvatarRef"
+      />
+      <img v-else :src="aceImage" alt="Ace" class="ace" :class="{ pulse: isRecording }" />
 
       <!-- ── WELCOME ─────────────────────────────────────────────────────── -->
       <template v-if="screen === 'welcome'">
