@@ -9,6 +9,8 @@
   import { useTutorStore } from '@/stores/tutor';
   import { storeToRefs } from 'pinia';
   import { message } from 'ant-design-vue';
+  import { supabase } from '@/lib/supabase';
+  import { getLessons } from '@/services/lessons';
 
   const aceWaving = new URL('../assets/ace/ace-waving.png', import.meta.url)
     .href;
@@ -31,6 +33,7 @@
   const stage = ref<'intro' | 'session'>('intro');
   const mode = ref<'free' | 'lesson'>('free');
   const topic = ref('');
+  const availableTopics = ref<{ title: string; tutor_topic: string; level: string }[]>([]);
   const history = ref<{ role: string; content: string }[]>([]);
   const isLoading = ref(false);
   const isRecording = ref(false);
@@ -52,10 +55,12 @@
     'gpt-4o': 'GPT-4o',
   };
 
+  const currentSessionId = ref<string | null>(null);
+  const sessionStartTime = ref<number | null>(null);
+
   let mediaRecorder: MediaRecorder | null = null;
   let chunks: Blob[] = [];
   let speakTimer: ReturnType<typeof setTimeout> | null = null;
-  let sessionStartTime: number | null = null;
 
   const TUTOR_DAILY_LIMIT_MS = 30 * 60 * 1000;
 
@@ -109,18 +114,26 @@
     return aceSurprised;
   });
 
-  const lessonTopics = [
-    'Present Simple vs Present Continuous',
-    'Past Simple vs Past Perfect',
-    'Modal Verbs (can, could, should, must)',
-    'Conditional Sentences (If clauses)',
-    'Vocabulary: Work and Career',
-    'Vocabulary: Travel and Tourism',
-    'Phrasal Verbs',
-    'Business English',
-    'Pronunciation Practice',
-    'Idioms and Expressions',
-  ];
+  const levelOrder = ['beginner', 'elementary', 'intermediate', 'advanced', 'business'];
+
+  function isLevelAvailable(optionLevel: string): boolean {
+    const userLevelIndex = levelOrder.indexOf(level.value);
+    const optionLevelIndex = levelOrder.indexOf(optionLevel);
+    return optionLevelIndex <= userLevelIndex;
+  }
+
+  async function loadTopics() {
+    try {
+      const lessons = await getLessons();
+      availableTopics.value = lessons.map(l => ({
+        title: l.title,
+        tutor_topic: l.tutor_topic,
+        level: l.level,
+      }));
+    } catch (err) {
+      console.error('Erro ao carregar tópicos', err);
+    }
+  }
 
   function speakTutor(text: string) {
     if (speakTimer) clearTimeout(speakTimer);
@@ -244,11 +257,23 @@
       return;
     }
 
-    sessionStartTime = Date.now();
+    sessionStartTime.value = Date.now();
     stage.value = 'session';
     history.value = [];
     tutorMessage.value = '';
     isLoading.value = true;
+
+    if (auth.user?.id) {
+      const { data } = await supabase
+        .from('tutor_sessions')
+        .insert({ user_id: auth.user.id, started_at: new Date().toISOString() })
+        .select()
+        .single();
+      if (data) {
+        currentSessionId.value = data.id;
+        sessionStartTime.value = Date.now();
+      }
+    }
 
     // Primeira mensagem do tutor — sem áudio
     await sendMessage(null);
@@ -363,11 +388,22 @@
     hasRecorded.value = false;
   }
 
+  async function saveDuration() {
+    if (!currentSessionId.value || !sessionStartTime.value) return;
+    const durationSeconds = Math.round((Date.now() - sessionStartTime.value) / 1000);
+    await supabase
+      .from('tutor_sessions')
+      .update({ duration_seconds: durationSeconds })
+      .eq('id', currentSessionId.value);
+  }
+
   function endSession() {
-    if (sessionStartTime) {
-      addTutorTime(Date.now() - sessionStartTime);
-      sessionStartTime = null;
+    saveDuration();
+    if (sessionStartTime.value) {
+      addTutorTime(Date.now() - sessionStartTime.value);
     }
+    currentSessionId.value = null;
+    sessionStartTime.value = null;
     stage.value = 'intro';
     history.value = [];
     tutorMessage.value = '';
@@ -380,18 +416,36 @@
     window.speechSynthesis.cancel();
   }
 
-  onMounted(() => {
+  onMounted(async () => {
     const saved = localStorage.getItem('userModel');
     if (saved) {
       activeModel.value = saved;
       activeModelLabel.value = modelLabels[saved] || saved;
     }
+
+    await loadTopics();
+
+    const savedTopic = localStorage.getItem('tutorTopic');
+    if (savedTopic) {
+      localStorage.removeItem('tutorTopic');
+
+      // Encontra o nível do tópico salvo
+      const topicInfo = availableTopics.value.find(t => t.tutor_topic === savedTopic);
+
+      if (topicInfo && !isLevelAvailable(topicInfo.level)) {
+        message.warning('Você precisa avançar nas aulas do seu nível para praticar este tema com o Tutor.', 5);
+        // Não aplica o tópico, deixa o usuário na tela normal
+      } else {
+        topic.value = savedTopic;
+        mode.value = 'lesson';
+      }
+    }
   });
 
   onUnmounted(() => {
-    if (sessionStartTime) {
-      addTutorTime(Date.now() - sessionStartTime);
-      sessionStartTime = null;
+    saveDuration();
+    if (sessionStartTime.value) {
+      addTutorTime(Date.now() - sessionStartTime.value);
     }
     window.speechSynthesis.cancel();
     if (speakTimer) clearTimeout(speakTimer);
@@ -441,8 +495,21 @@
         <p class="topic-label">Escolha o tópico:</p>
         <select v-model="topic" class="select">
           <option value="" disabled>Selecione um tópico</option>
-          <option v-for="t in lessonTopics" :key="t" :value="t">{{ t }}</option>
+          <optgroup v-for="lvl in levelOrder" :key="lvl" :label="lvl.toUpperCase()">
+            <option
+              v-for="t in availableTopics.filter(at => at.level === lvl)"
+              :key="t.tutor_topic"
+              :value="t.tutor_topic"
+              :disabled="!isLevelAvailable(lvl)"
+              :title="!isLevelAvailable(lvl) ? 'Avance nas aulas para desbloquear este tema' : ''"
+            >
+              {{ t.title }}{{ !isLevelAvailable(lvl) ? ' 🔒' : '' }}
+            </option>
+          </optgroup>
         </select>
+        <p v-if="topic && !isLevelAvailable(availableTopics.find(t => t.tutor_topic === topic)?.level || '')" class="topic-warning">
+          🔒 Avance nas aulas do seu nível para desbloquear este tema
+        </p>
       </div>
 
       <div class="model-badge" :class="activeModel ? 'model-custom' : 'model-default'">
@@ -647,6 +714,14 @@
     color: var(--text-primary);
     outline: none;
     cursor: pointer;
+  }
+  .topic-warning {
+    font-size: 12px;
+    color: #d97706;
+    background: #fef3c7;
+    padding: 8px 12px;
+    border-radius: 8px;
+    margin: 0;
   }
   .session-header {
     display: flex;

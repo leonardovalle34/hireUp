@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
-import { sendTutorMessage, type TutorResponse } from '@/services/tutor';
+import { sendTutorMessage } from '@/services/tutor';
+import type { TutorResponse } from '@/interfaces/ITutor';
 
 export const useTutorStore = defineStore('tutor', {
   state: () => ({

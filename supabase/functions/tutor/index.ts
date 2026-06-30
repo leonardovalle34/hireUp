@@ -90,16 +90,21 @@ Deno.serve(async (req: Request) => {
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+      { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
     );
 
-    const { data: { user } } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
-    if (!user) {
-      return new Response(JSON.stringify({ error: 'Não autorizado' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
+
+    const adminSupabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    );
 
     const formData = await req.formData();
     const level = (formData.get('level') as string) || 'beginner';
@@ -112,7 +117,7 @@ Deno.serve(async (req: Request) => {
     const audioFile = formData.get('file') as File | null;
 
     // Busca plano do usuário
-    const { data: profile } = await supabase
+    const { data: profile } = await adminSupabase
       .from('profiles')
       .select('plan')
       .eq('id', user.id)
@@ -128,10 +133,22 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    // Valida modelo externo sem API key
+    const DEFAULT_MODEL = 'claude-haiku-4-5-20251001';
+    const isCustomModel = userModel && userModel !== DEFAULT_MODEL;
+
+    if (isCustomModel && !hasApiKey) {
+      return new Response(JSON.stringify({
+        error: `Você selecionou um modelo externo mas não adicionou uma API key. Adicione em Configurações → API Key própria.`
+      }), {
+        status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
     // Sem API key — verifica limite de 30 min/dia
     if (!hasApiKey) {
       const today = new Date().toISOString().split('T')[0];
-      const { data: sessions } = await supabase
+      const { data: sessions } = await adminSupabase
         .from('tutor_sessions')
         .select('duration_seconds')
         .eq('user_id', user.id)
@@ -145,18 +162,6 @@ Deno.serve(async (req: Request) => {
           status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       }
-    }
-
-    // Valida modelo externo sem API key
-    const DEFAULT_MODEL = 'claude-haiku-4-5-20251001';
-    const isCustomModel = userModel && userModel !== DEFAULT_MODEL;
-
-    if (isCustomModel && !hasApiKey) {
-      return new Response(JSON.stringify({
-        error: `Você selecionou um modelo externo mas não adicionou uma API key. Adicione em Configurações → API Key própria.`
-      }), {
-        status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
     }
 
     const history: { role: string; content: string }[] =
@@ -242,7 +247,7 @@ Deno.serve(async (req: Request) => {
       const chatData = await chatRes.json();
       tutorResponse = chatData.choices[0].message.content;
     } else {
-      const apiKey = userApiKey || Deno.env.get('ANTHROPIC_API_KEY');
+      const apiKey = isCustomModel ? (userApiKey || Deno.env.get('ANTHROPIC_API_KEY')) : Deno.env.get('ANTHROPIC_API_KEY');
       if (!apiKey) throw new Error('ANTHROPIC_API_KEY não configurada');
 
       const anthropic = new Anthropic({ apiKey });

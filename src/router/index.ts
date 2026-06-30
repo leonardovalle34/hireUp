@@ -55,6 +55,31 @@ const router = createRouter({
           path: 'placement-test',
           component: PlacementTestView,
         },
+        {
+          path: 'lessons',
+          component: () => import('@/views/LessonsView.vue'),
+        },
+        {
+          path: 'lesson/:id',
+          component: () => import('@/views/LessonView.vue'),
+        },
+        {
+          path: 'badges',
+          component: () => import('@/views/BadgesView.vue'),
+        },
+        {
+          path: 'certificate',
+          component: () => import('@/views/CertificateView.vue'),
+        },
+        {
+          path: 'quiz',
+          component: () => import('@/views/QuizView.vue'),
+        },
+        {
+          path: 'news',
+          component: () => import('@/views/NewsView.vue'),
+          meta: { requiresAuth: true },
+        },
       ],
     },
   ],

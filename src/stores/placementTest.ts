@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
-import { callPlacementTest, type PlacementTestResponse } from '@/services/placementTest';
+import { callPlacementTest } from '@/services/placementTest';
+import type { PlacementTestResponse } from '@/interfaces/IPlacementTest';
 
 export const usePlacementTestStore = defineStore('placementTest', {
   state: () => ({

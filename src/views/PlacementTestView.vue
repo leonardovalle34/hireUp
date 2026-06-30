@@ -422,6 +422,9 @@ export default { name: 'PlacementTestView' };
   watch(() => auth.dashboardUser, (user) => {
     if (!user) return;
 
+    // Não verifica bloqueio se já estamos exibindo o resultado do teste atual
+    if (screen.value === 'result') return;
+
     const plan = (user as any)?.plan || 'free';
     const testDone = (user as any)?.placement_test_done;
     const testDoneAt = (user as any)?.placement_test_done_at;
