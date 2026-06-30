@@ -66,6 +66,20 @@ export async function completeLesson(
       completed_at: completed ? new Date().toISOString() : null,
     }, { onConflict: 'user_id,lesson_id' });
   if (error) throw error;
+
+  if (completed) {
+    await supabase.rpc('check_and_award_badges', { p_user_id: userId });
+  }
+}
+
+export async function getUserBadges(userId: string) {
+  const { data, error } = await supabase
+    .from('user_badges')
+    .select('*')
+    .eq('user_id', userId)
+    .order('earned_at');
+  if (error) throw error;
+  return data || [];
 }
 
 export async function incrementAttempts(userId: string, lessonId: string): Promise<void> {

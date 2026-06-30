@@ -26,8 +26,10 @@
   const router = useRouter();
   const weeklyChartRef = ref<HTMLCanvasElement | null>(null);
   const scoreChartRef = ref<HTMLCanvasElement | null>(null);
+  const activityChartRef = ref<HTMLCanvasElement | null>(null);
   let weeklyChartInstance: Chart | null = null;
   let scoreChartInstance: Chart | null = null;
+  let activityChartInstance: Chart | null = null;
 
   const aceImage = computed(() => {
     const s = dashboardUser.value?.streak ?? 0;
@@ -95,7 +97,9 @@
     const skipped = localStorage.getItem('placement_test_skipped') === 'true';
     if (skipped) return;
 
-    const { data: { user: authUser } } = await supabase.auth.getUser();
+    const {
+      data: { user: authUser },
+    } = await supabase.auth.getUser();
     if (!authUser) return;
 
     const { data: profile } = await supabase
@@ -140,6 +144,7 @@
   function buildCharts() {
     const weekly = dashboardUser.value?.weekly_chart ?? [];
     const scores = dashboardUser.value?.score_chart ?? [];
+    const activity = dashboardUser.value?.activity_chart ?? [];
     const colors = getChartColors();
 
     if (weeklyChartRef.value) {
@@ -225,6 +230,62 @@
         },
       });
     }
+
+    if (activityChartRef.value) {
+      if (activityChartInstance) activityChartInstance.destroy();
+      activityChartInstance = new Chart(activityChartRef.value, {
+        type: 'bar',
+        data: {
+          labels: activity.map((d: any) => d.label),
+          datasets: [
+            {
+              label: 'Entrevistas',
+              data: activity.map((d: any) => d.interviews),
+              backgroundColor: '#3b82f6',
+            },
+            {
+              label: 'Tutor',
+              data: activity.map((d: any) => d.tutor),
+              backgroundColor: '#10b981',
+            },
+            {
+              label: 'Aulas',
+              data: activity.map((d: any) => d.lessons),
+              backgroundColor: '#f59e0b',
+            },
+            {
+              label: 'Quiz',
+              data: activity.map((d: any) => d.quiz),
+              backgroundColor: '#8b5cf6',
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: true,
+              position: 'bottom',
+              labels: { font: { size: 10 }, color: colors.text },
+            },
+          },
+          scales: {
+            x: {
+              stacked: true,
+              ticks: { font: { size: 11 }, color: colors.text },
+              grid: { display: false },
+            },
+            y: {
+              stacked: true,
+              beginAtZero: true,
+              ticks: { stepSize: 1, font: { size: 11 }, color: colors.text },
+              grid: { color: colors.grid },
+            },
+          },
+        },
+      });
+    }
   }
 
   watch(
@@ -248,20 +309,22 @@
   <div class="dashboard-container">
     <!-- Placement test modal -->
     <Teleport to="body">
-      <div v-if="showPlacementModal" class="placement-modal-overlay" @click.self="placementLater">
+      <div
+        v-if="showPlacementModal"
+        class="placement-modal-overlay"
+        @click.self="placementLater"
+      >
         <div class="placement-modal">
           <img :src="aceThumbsup" alt="Ace" class="placement-ace" />
           <h2>Descubra seu nível de inglês!</h2>
           <p>
-            Faça o teste de nivelamento gratuito (5–8 minutos) e o Ace vai personalizar
-            seus treinos para o seu nível.
+            Faça o teste de nivelamento gratuito (5–8 minutos) e o Ace vai
+            personalizar seus treinos para o seu nível.
           </p>
           <button class="pm-btn-primary" @click="placementDoNow">
             🎯 Fazer agora
           </button>
-          <button class="pm-btn-ghost" @click="placementLater">
-            Depois
-          </button>
+          <button class="pm-btn-ghost" @click="placementLater">Depois</button>
           <button class="pm-btn-link" @click="placementSkip">
             Pular e definir manualmente em Configurações
           </button>
@@ -312,8 +375,18 @@
         <p class="stat-value">{{ dashboardUser?.lessons_today ?? 0 }}</p>
       </div>
       <div class="stat-card">
-        <p class="stat-label">Restantes hoje</p>
+        <p class="stat-label">Treinos restantes hoje</p>
         <p class="stat-value">{{ remainingLabel }}</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">Aulas hoje</p>
+        <p class="stat-value">{{ dashboardUser?.course_lessons_today ?? 0 }}</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">Tutor hoje</p>
+        <p class="stat-value">
+          {{ dashboardUser?.tutor_minutes_today ?? 0 }} min
+        </p>
       </div>
     </div>
 
@@ -381,6 +454,17 @@
             ref="scoreChartRef"
             role="img"
             aria-label="Evolução do score nas últimas sessões"
+          ></canvas>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <h2 class="section-title">Atividades — 7 dias</h2>
+        <div class="chart-wrap">
+          <canvas
+            ref="activityChartRef"
+            role="img"
+            aria-label="Atividades por tipo nos últimos 7 dias"
           ></canvas>
         </div>
       </div>

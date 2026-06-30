@@ -8,6 +8,7 @@ import {
   HomeOutlined,
   AudioOutlined,
   BookOutlined,
+  BulbOutlined,
   DollarOutlined,
 } from '@ant-design/icons-vue';
 
@@ -33,6 +34,10 @@ const route = useRoute();
       <a-menu-item key="/lessons" @click="router.push('/lessons')">
         <BookOutlined />
         <span class="nav-label">Aulas</span>
+      </a-menu-item>
+      <a-menu-item key="/quiz" @click="router.push('/quiz')">
+        <BulbOutlined />
+        <span class="nav-label">Quiz</span>
       </a-menu-item>
       <a-menu-item key="/pricing" @click="router.push('/pricing')">
         <DollarOutlined />

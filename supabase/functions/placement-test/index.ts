@@ -62,7 +62,9 @@ async function scoreWithClaude(
     messages: [{ role: 'user', content: prompt }],
   });
 
-  const text = (response.content[0] as { type: string; text: string }).text;
+  const contentBlock = response.content?.[0] as { type: string; text: string } | undefined;
+  const text = contentBlock?.text;
+  if (!text) return { score: 50, feedback: '' };
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (jsonMatch) {
     try {
@@ -130,6 +132,15 @@ Deno.serve(async (req: Request) => {
 
       const transcription = await transcribeAudio(audioFile, openaiKey);
 
+      if (!transcription || transcription.length < 2) {
+        return new Response(JSON.stringify({
+          error: 'Não conseguimos identificar sua resposta no áudio. Por favor, tente gravar novamente falando mais alto e claramente.',
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
       const prompt = `You are evaluating English pronunciation for a placement test.
 Target phrase: "${phrase}"
 Transcribed speech: "${transcription}"
@@ -137,7 +148,18 @@ Transcribed speech: "${transcription}"
 Evaluate pronunciation accuracy (did they say the right words?) and naturalness.
 Respond in JSON only: {"score": <0-100>, "feedback": "<1-2 sentences in Portuguese, encouraging tone>"}`;
 
-      const evaluation = await scoreWithClaude(anthropic, userModel, prompt);
+      let evaluation;
+      try {
+        evaluation = await scoreWithClaude(anthropic, userModel, prompt);
+      } catch (err) {
+        console.error('Erro ao processar resposta da IA:', err);
+        return new Response(JSON.stringify({
+          error: 'Houve um problema ao processar sua resposta. Por favor, tente novamente.',
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
 
       return new Response(
         JSON.stringify({ transcription, phrase, ...evaluation }),
@@ -154,6 +176,15 @@ Respond in JSON only: {"score": <0-100>, "feedback": "<1-2 sentences in Portugue
 
       const transcription = await transcribeAudio(audioFile, openaiKey);
 
+      if (!transcription || transcription.length < 2) {
+        return new Response(JSON.stringify({
+          error: 'Não conseguimos identificar sua resposta no áudio. Por favor, tente gravar novamente falando mais alto e claramente.',
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
       const prompt = `You are evaluating English reading comprehension for a placement test.
 
 Text: "${INTERPRETATION_TEXT}"
@@ -163,7 +194,18 @@ Student answer (transcribed): "${transcription}"
 Evaluate: (1) did they understand the text? (2) how fluent is their English?
 Respond in JSON only: {"score": <0-100>, "feedback": "<1-2 sentences in Portuguese, encouraging tone>"}`;
 
-      const evaluation = await scoreWithClaude(anthropic, userModel, prompt);
+      let evaluation;
+      try {
+        evaluation = await scoreWithClaude(anthropic, userModel, prompt);
+      } catch (err) {
+        console.error('Erro ao processar resposta da IA:', err);
+        return new Response(JSON.stringify({
+          error: 'Houve um problema ao processar sua resposta. Por favor, tente novamente.',
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
 
       return new Response(
         JSON.stringify({ transcription, ...evaluation }),
@@ -177,6 +219,14 @@ Respond in JSON only: {"score": <0-100>, "feedback": "<1-2 sentences in Portugue
 
       if (audioFile && audioFile.size > 0) {
         transcription = await transcribeAudio(audioFile, openaiKey);
+        if (!transcription || transcription.length < 2) {
+          return new Response(JSON.stringify({
+            error: 'Não conseguimos identificar sua resposta no áudio. Por favor, tente gravar novamente falando mais alto e claramente.',
+          }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
       } else if (answer) {
         transcription = answer;
       }
@@ -196,14 +246,26 @@ Have a natural professional conversation in English. Ask about work experience, 
 Keep responses to 2 sentences + 1 follow-up question. This is turn ${questionIndex + 1} of 3.
 Be encouraging and professional.`;
 
-      const chatResponse = await anthropic.messages.create({
-        model: userModel,
-        max_tokens: 200,
-        system: systemPrompt,
-        messages,
-      });
+      let chatResponse;
+      try {
+        chatResponse = await anthropic.messages.create({
+          model: userModel,
+          max_tokens: 200,
+          system: systemPrompt,
+          messages,
+        });
+      } catch (err) {
+        console.error('Erro ao processar resposta da IA:', err);
+        return new Response(JSON.stringify({
+          error: 'Houve um problema ao processar sua resposta. Por favor, tente novamente.',
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
 
-      const aiResponse = (chatResponse.content[0] as { type: string; text: string }).text;
+      const aiResponseBlock = chatResponse.content?.[0] as { type: string; text: string } | undefined;
+      const aiResponse = aiResponseBlock?.text ?? '';
 
       let score = 0;
       let feedback = '';
@@ -211,9 +273,13 @@ Be encouraging and professional.`;
         const evalPrompt = `Rate this English response for a placement test (fluency, vocabulary, grammar):
 "${transcription}"
 Respond in JSON only: {"score": <0-100>, "feedback": "<1 sentence in Portuguese>"}`;
-        const evaluation = await scoreWithClaude(anthropic, userModel, evalPrompt);
-        score = evaluation.score;
-        feedback = evaluation.feedback;
+        try {
+          const evaluation = await scoreWithClaude(anthropic, userModel, evalPrompt);
+          score = evaluation.score;
+          feedback = evaluation.feedback;
+        } catch (err) {
+          console.error('Erro ao processar resposta da IA:', err);
+        }
       }
 
       const updatedHistory = [...history];
@@ -253,10 +319,24 @@ Respond in JSON only: {"score": <0-100>, "feedback": "<1 sentence in Portuguese>
       const { data: { user } } = await supabaseClient.auth.getUser(jwt);
 
       if (user) {
+        const levelOrder = ['beginner', 'elementary', 'intermediate', 'advanced', 'business'];
+
+        const { data: currentProfile } = await supabaseClient
+          .from('profiles')
+          .select('english_level')
+          .eq('id', user.id)
+          .single();
+
+        const currentLevel = currentProfile?.english_level || 'beginner';
+        const currentIndex = levelOrder.indexOf(currentLevel);
+        const testResultIndex = levelOrder.indexOf(level);
+
+        const finalLevel = testResultIndex >= currentIndex ? level : currentLevel;
+
         await supabaseClient
           .from('profiles')
           .update({
-            english_level: level,
+            english_level: finalLevel,
             placement_test_done: true,
             placement_test_done_at: new Date().toISOString(),
           })

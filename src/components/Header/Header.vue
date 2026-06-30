@@ -19,9 +19,16 @@
     return name.charAt(0).toUpperCase();
   });
 
-  function toggleMenu() { menuOpen.value = !menuOpen.value; }
-  function closeMenu() { menuOpen.value = false; }
-  function logout() { auth.logout(); closeMenu(); }
+  function toggleMenu() {
+    menuOpen.value = !menuOpen.value;
+  }
+  function closeMenu() {
+    menuOpen.value = false;
+  }
+  function logout() {
+    auth.logout();
+    closeMenu();
+  }
 
   let deferredPrompt: any = null;
   const canInstall = ref(false);
@@ -51,8 +58,30 @@
     <div class="avatar-wrap">
       <button class="avatar-btn" @click="toggleMenu">{{ avatarLetter }}</button>
       <div v-if="menuOpen" class="avatar-menu">
-        <button @click="router.push('/settings'); closeMenu()">⚙️ Configurações</button>
-        <button @click="router.push('/support'); closeMenu()">💬 Suporte</button>
+        <button
+          @click="
+            router.push('/badges');
+            closeMenu();
+          "
+        >
+          🏆 Conquistas
+        </button>
+        <button
+          @click="
+            router.push('/settings');
+            closeMenu();
+          "
+        >
+          ⚙️ Configurações
+        </button>
+        <button
+          @click="
+            router.push('/support');
+            closeMenu();
+          "
+        >
+          💬 Suporte
+        </button>
         <button @click="logout">🚪 Sair</button>
       </div>
       <div v-if="menuOpen" class="overlay" @click="closeMenu"></div>
@@ -85,7 +114,9 @@
     color: white;
     margin: 0;
   }
-  .avatar-wrap { position: relative; }
+  .avatar-wrap {
+    position: relative;
+  }
   .avatar-btn {
     width: 36px;
     height: 36px;
@@ -106,7 +137,7 @@
     right: 0;
     background: white;
     border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
     overflow: hidden;
     min-width: 180px;
     z-index: 2000;
@@ -123,7 +154,9 @@
     cursor: pointer;
     color: #111;
   }
-  .avatar-menu button:hover { background: #f3f4f6; }
+  .avatar-menu button:hover {
+    background: #f3f4f6;
+  }
   .overlay {
     position: fixed;
     top: 0;

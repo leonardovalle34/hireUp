@@ -63,6 +63,18 @@ const router = createRouter({
           path: 'lesson/:id',
           component: () => import('@/views/LessonView.vue'),
         },
+        {
+          path: 'badges',
+          component: () => import('@/views/BadgesView.vue'),
+        },
+        {
+          path: 'certificate',
+          component: () => import('@/views/CertificateView.vue'),
+        },
+        {
+          path: 'quiz',
+          component: () => import('@/views/QuizView.vue'),
+        },
       ],
     },
   ],
