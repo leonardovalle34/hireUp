@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { ref, onMounted } from 'vue';
+  import { ref } from 'vue';
   import { useAuthStore } from '@/stores/auth';
   import { useRouter } from 'vue-router';
   import { storeToRefs } from 'pinia';
@@ -27,27 +27,6 @@
   async function handleSignup() {
     router.push('/signup');
   }
-
-  let deferredPrompt: any = null;
-  const canInstall = ref(false);
-
-  function installApp() {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      deferredPrompt.userChoice.then(() => {
-        deferredPrompt = null;
-        canInstall.value = false;
-      });
-    }
-  }
-
-  onMounted(() => {
-    window.addEventListener('beforeinstallprompt', (e: any) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      canInstall.value = true;
-    });
-  });
 </script>
 
 <template>
@@ -94,10 +73,6 @@
           Continue com Google
         </a-button>
 
-        <button v-if="canInstall" class="btn-install" @click="installApp">
-          📲 Instalar o App
-        </button>
-
         <a-alert
           v-if="error"
           :message="error"
@@ -134,27 +109,5 @@
 
   .login-card {
     border-radius: 12px;
-  }
-
-  .btn-install {
-    display: block;
-    width: 100%;
-    margin-top: 12px;
-    padding: 10px 16px;
-    background: transparent;
-    border: 1.5px solid #d9d9d9;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 500;
-    color: #374151;
-    cursor: pointer;
-    transition:
-      border-color 0.2s,
-      color 0.2s;
-  }
-
-  .btn-install:hover {
-    border-color: #1677ff;
-    color: #1677ff;
   }
 </style>
