@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import router from '@/router';
 import { signIn, signUp, signOut, getFullUser } from '@/services/auth';
 import { supabase } from '@/lib/supabase';
-import { IUser } from '@/interface/IUser';
+import type { IUser } from '@/interfaces/IUser';
 import { deleteAccount } from '@/services/account';
 import { updateEnglishLevel } from '@/services/profile';
 

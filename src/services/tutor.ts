@@ -1,12 +1,7 @@
 import { supabase } from '@/lib/supabase';
+import type { TutorResponse } from '@/interfaces/ITutor';
 
-export interface TutorResponse {
-  transcription: string;
-  tutor_response: string;
-  tutor_response_clean: string;
-  tutor_name: string;
-  history: { role: string; content: string }[];
-}
+export type { TutorResponse };
 
 export async function sendTutorMessage(form: FormData): Promise<TutorResponse> {
   const {

@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
-import { getLessons, getUserProgress, completeLesson, type Lesson, type UserProgress } from '@/services/lessons';
+import { getLessons, getUserProgress, completeLesson } from '@/services/lessons';
+import type { Lesson, UserProgress } from '@/interfaces/ILesson';
 
 export const useLessonsStore = defineStore('lessons', {
   state: () => ({

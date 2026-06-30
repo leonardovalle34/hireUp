@@ -7,7 +7,8 @@ import { ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { useLessonsStore } from '@/stores/lessons';
-import { getLessonById, type Lesson } from '@/services/lessons';
+import { getLessonById } from '@/services/lessons';
+import type { Lesson } from '@/interfaces/ILesson';
 import { message } from 'ant-design-vue';
 
 const router = useRouter();

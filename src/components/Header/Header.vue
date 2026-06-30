@@ -60,6 +60,14 @@
       <div v-if="menuOpen" class="avatar-menu">
         <button
           @click="
+            router.push('/news');
+            closeMenu();
+          "
+        >
+          📰 Notícias
+        </button>
+        <button
+          @click="
             router.push('/badges');
             closeMenu();
           "

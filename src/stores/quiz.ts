@@ -5,8 +5,8 @@ import {
   getQuizUsageToday,
   incrementQuizUsage,
   getQuizDailyLimit,
-  type QuizQuestion,
 } from '@/services/quiz';
+import type { QuizQuestion } from '@/interfaces/IQuiz';
 
 export const useQuizStore = defineStore('quiz', {
   state: () => ({

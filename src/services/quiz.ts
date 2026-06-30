@@ -1,14 +1,7 @@
 import { supabase } from '@/lib/supabase';
+import type { QuizQuestion } from '@/interfaces/IQuiz';
 
-export interface QuizQuestion {
-  id: string;
-  level: string;
-  question: string;
-  options: string[];
-  answer: number;
-  explanation: string;
-  category: string;
-}
+export type { QuizQuestion };
 
 export function getQuizDailyLimit(plan: string): number | null {
   if (plan === 'free') return 20;
