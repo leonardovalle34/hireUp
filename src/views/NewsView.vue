@@ -13,15 +13,19 @@ const news = ref<NewsArticle[]>([]);
 const loading = ref(true);
 const selectedCategory = ref('all');
 
+function normalizeCategory(category: string): string {
+  return category.trim().toLowerCase();
+}
+
 const categories = computed(() => {
-  const cats = new Set(news.value.map(n => n.category));
+  const cats = new Set(news.value.map(n => normalizeCategory(n.category)));
   return ['all', ...Array.from(cats)];
 });
 
 const filteredNews = computed(() =>
   selectedCategory.value === 'all'
     ? news.value
-    : news.value.filter(n => n.category === selectedCategory.value)
+    : news.value.filter(n => normalizeCategory(n.category) === selectedCategory.value)
 );
 
 function formatDate(dateStr: string) {

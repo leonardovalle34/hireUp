@@ -7,10 +7,12 @@ import { ref, onMounted } from 'vue';
 
 const aceWaving = new URL('../../assets/ace/ace-waving.png', import.meta.url).href;
 
-const showModal = ref(false);
-const platform = ref<'ios' | 'android' | 'other'>('other');
+type MobilePlatform = 'ios' | 'android';
 
-function detectPlatform() {
+const showModal = ref(false);
+const platform = ref<MobilePlatform | null>(null);
+
+function detectPlatform(): MobilePlatform | 'other' {
   const ua = navigator.userAgent.toLowerCase();
   if (/iphone|ipad|ipod/.test(ua)) return 'ios';
   if (/android/.test(ua)) return 'android';
@@ -29,8 +31,11 @@ function closeModal() {
 }
 
 onMounted(() => {
-  if (!isStandalone()) {
-    platform.value = detectPlatform();
+  if (isStandalone()) return;
+
+  const detected = detectPlatform();
+  if (detected === 'ios' || detected === 'android') {
+    platform.value = detected;
     showModal.value = true;
   }
 });
@@ -58,12 +63,6 @@ onMounted(() => {
         <div class="step"><span class="step-num">1</span><span>Toque no ícone de <strong>compartilhar</strong> (quadrado com seta) na barra do Safari</span></div>
         <div class="step"><span class="step-num">2</span><span>Role para baixo e toque em <strong>"Adicionar à Tela de Início"</strong></span></div>
         <div class="step"><span class="step-num">3</span><span>Toque em <strong>"Adicionar"</strong> no canto superior direito</span></div>
-      </div>
-
-      <div v-else class="steps">
-        <p class="steps-title">No seu navegador:</p>
-        <div class="step"><span class="step-num">1</span><span>Procure o ícone de <strong>instalação</strong> na barra de endereço</span></div>
-        <div class="step"><span class="step-num">2</span><span>Ou acesse o menu do navegador e escolha <strong>"Instalar HireUp"</strong></span></div>
       </div>
 
       <button class="btn-close" @click="closeModal">Entendi, continuar no navegador</button>
