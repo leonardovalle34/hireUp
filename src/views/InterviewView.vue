@@ -68,7 +68,7 @@
     const model = localStorage.getItem('userModel') || '';
     const key = localStorage.getItem('userApiKey') || '';
 
-    // Plano free com API key — bloqueia
+    // Free plan with an API key — block
     const plan = (dashboardUser.value as any)?.plan || 'free';
     if (plan === 'free' && key) {
       message.warning('API key própria não está disponível no plano Free.', 4);
@@ -76,7 +76,7 @@
       return;
     }
 
-    // Modelo externo sem key — bloqueia
+    // External model without a key — block
     if (model && !key) {
       message.warning(
         `Você selecionou ${activeModelLabel.value} mas não adicionou uma API key. Vá em Configurações → API Key própria.`,
@@ -87,7 +87,7 @@
     }
 
     try {
-      // Tem API key → ilimitado, pula verificação de plano
+      // Has an API key → unlimited, skip the plan check
       if (!key) {
         const canStart = await interviewStore.canStart(user.value?.id || '');
         if (!canStart) {
@@ -255,7 +255,7 @@
     hasRecorded.value = false;
     window.speechSynthesis.cancel();
 
-    // Atualiza modelo ao voltar pra intro
+    // Refresh the model when going back to intro
     const saved = localStorage.getItem('userModel') || '';
     activeModel.value = saved;
     activeModelLabel.value = modelLabels[saved] || 'Claude Haiku';

@@ -10,55 +10,55 @@ export function generateCertificate(userName: string, completionDate: string) {
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
 
-  // Fundo branco
+  // White background
   doc.setFillColor(255, 255, 255);
   doc.rect(0, 0, pageWidth, pageHeight, 'F');
 
-  // Borda azul externa
+  // Outer blue border
   doc.setDrawColor(0, 22, 51); // #001633
   doc.setLineWidth(3);
   doc.rect(8, 8, pageWidth - 16, pageHeight - 16);
 
-  // Borda azul interna fina
+  // Thin inner blue border
   doc.setDrawColor(29, 78, 216); // #1d4ed8
   doc.setLineWidth(0.5);
   doc.rect(12, 12, pageWidth - 24, pageHeight - 24);
 
-  // Logo / Nome HireUp
+  // Logo / HireUp name
   doc.setTextColor(0, 22, 51);
   doc.setFontSize(28);
   doc.setFont('helvetica', 'bold');
   doc.text('HireUp', pageWidth / 2, 35, { align: 'center' });
 
-  // Linha decorativa
+  // Decorative line
   doc.setDrawColor(29, 78, 216);
   doc.setLineWidth(1);
   doc.line(pageWidth / 2 - 30, 40, pageWidth / 2 + 30, 40);
 
-  // Título do certificado
+  // Certificate title
   doc.setFontSize(16);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(100, 100, 100);
   doc.text('CERTIFICADO DE CONCLUSÃO', pageWidth / 2, 55, { align: 'center' });
 
-  // Texto principal
+  // Main text
   doc.setFontSize(14);
   doc.setTextColor(50, 50, 50);
   doc.text('Certificamos que', pageWidth / 2, 75, { align: 'center' });
 
-  // Nome do aluno
+  // Student name
   doc.setFontSize(32);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(0, 22, 51);
   doc.text(userName, pageWidth / 2, 92, { align: 'center' });
 
-  // Linha sob o nome
+  // Line under the name
   const nameWidth = doc.getTextWidth(userName);
   doc.setDrawColor(29, 78, 216);
   doc.setLineWidth(0.5);
   doc.line(pageWidth / 2 - nameWidth / 2 - 5, 96, pageWidth / 2 + nameWidth / 2 + 5, 96);
 
-  // Texto de conclusão
+  // Completion text
   doc.setFontSize(13);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(50, 50, 50);
@@ -75,12 +75,12 @@ export function generateCertificate(userName: string, completionDate: string) {
     pageWidth / 2, 128, { align: 'center' }
   );
 
-  // Data
+  // Date
   doc.setFontSize(11);
   doc.setTextColor(100, 100, 100);
   doc.text(`Concluído em ${completionDate}`, pageWidth / 2, 145, { align: 'center' });
 
-  // Selo HireUp no canto
+  // HireUp seal in the corner
   doc.setFillColor(29, 78, 216);
   doc.circle(pageWidth - 35, pageHeight - 30, 15, 'F');
   doc.setTextColor(255, 255, 255);

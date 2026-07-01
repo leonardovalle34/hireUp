@@ -179,7 +179,7 @@
       }
     }
 
-    // Primeira mensagem do tutor — sem áudio
+    // First tutor message — no audio
     await sendMessage(null);
   }
 
@@ -331,12 +331,12 @@
     if (savedTopic) {
       localStorage.removeItem('tutorTopic');
 
-      // Encontra o nível do tópico salvo
+      // Find the level of the saved topic
       const topicInfo = availableTopics.value.find(t => t.tutor_topic === savedTopic);
 
       if (topicInfo && !isLevelAvailable(topicInfo.level)) {
         message.warning('Você precisa avançar nas aulas do seu nível para praticar este tema com o Tutor.', 5);
-        // Não aplica o tópico, deixa o usuário na tela normal
+        // Don't apply the topic, leave the user on the normal screen
       } else {
         topic.value = savedTopic;
         mode.value = 'lesson';
