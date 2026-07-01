@@ -12,7 +12,7 @@
   const { dashboardUser } = storeToRefs(auth);
   const router = useRouter();
 
-  // Tema
+  // Theme
   const isDark = ref(false);
 
   // API Key
@@ -20,11 +20,11 @@
   const apiKeyVisible = ref(false);
   const apiKeySaved = ref(false);
 
-  // Modelo
+  // Model
   const selectedModel = ref('');
   const modelSaved = ref(false);
 
-  // Nível
+  // Level
   const englishLevel = ref('');
   const levelSaved = ref(false);
 
@@ -190,7 +190,7 @@
     const savedModel = localStorage.getItem('userModel');
     if (savedModel) selectedModel.value = savedModel;
 
-    // Carrega o nível atual do perfil
+    // Load the current level from the profile
     if (dashboardUser.value?.english_level) {
       englishLevel.value = dashboardUser.value.english_level;
     }
