@@ -25,7 +25,7 @@ export async function sendInterviewTurn(
   );
 
   if (!res.ok) {
-    // Tenta pegar a mensagem real do erro
+    // Try to get the real error message
     try {
       const errData = await res.json();
       throw new Error(errData.error || `Erro no servidor: ${res.status}`);

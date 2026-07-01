@@ -6,7 +6,7 @@ export type { QuizQuestion };
 export function getQuizDailyLimit(plan: string): number | null {
   if (plan === 'free') return 20;
   if (plan === 'practice') return 50;
-  return null; // fluent = ilimitado
+  return null; // fluent = unlimited
 }
 
 export async function getQuizUsageToday(userId: string): Promise<number> {
@@ -45,7 +45,7 @@ export async function getNextQuestions(
   level: string,
   count: number = 10
 ): Promise<QuizQuestion[]> {
-  // Busca todas as perguntas do nível
+  // Fetch all questions for the level
   const { data: allQuestions, error } = await supabase
     .from('quiz_questions')
     .select('*')
@@ -53,7 +53,7 @@ export async function getNextQuestions(
 
   if (error) throw error;
 
-  // Busca IDs já respondidos corretamente
+  // Fetch IDs already answered correctly
   const { data: correctlyAnswered } = await supabase
     .from('user_quiz_history')
     .select('question_id')
@@ -62,10 +62,10 @@ export async function getNextQuestions(
 
   const excludeSet = new Set((correctlyAnswered || []).map(r => r.question_id));
 
-  // Filtra no JavaScript em vez de SQL
+  // Filter in JavaScript instead of SQL
   const available = (allQuestions || []).filter(q => !excludeSet.has(q.id));
 
-  console.log(`Nível ${level}: ${allQuestions?.length} total, ${excludeSet.size} excluídas, ${available.length} disponíveis`);
+  console.log(`Level ${level}: ${allQuestions?.length} total, ${excludeSet.size} excluded, ${available.length} available`);
 
   const shuffled = available.sort(() => Math.random() - 0.5);
   return shuffled.slice(0, count);

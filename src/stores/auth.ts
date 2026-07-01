@@ -102,7 +102,7 @@ export const useAuthStore = defineStore('auth', {
         if (!this.user?.id) throw new Error('Usuário não autenticado');
         await updateEnglishLevel(this.user.id, level);
         if (this.dashboardUser) {
-          // atualiza localmente sem precisar refetch
+          // update locally without needing a refetch
           (this.dashboardUser as any).english_level = level;
         }
       } catch (err: any) {
