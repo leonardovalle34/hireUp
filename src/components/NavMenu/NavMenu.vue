@@ -10,6 +10,7 @@
     ProfileOutlined,
     BulbOutlined,
     ReadOutlined,
+    VideoCameraOutlined,
     DollarOutlined,
   } from '@ant-design/icons-vue';
 
@@ -20,6 +21,7 @@
     { path: '/lessons', label: 'Aulas', icon: ProfileOutlined },
     { path: '/quiz', label: 'Quiz', icon: BulbOutlined },
     { path: '/news', label: 'Notícias', icon: ReadOutlined },
+    { path: '/videos', label: 'Vídeos', icon: VideoCameraOutlined },
     { path: '/pricing', label: 'Planos', icon: DollarOutlined },
   ];
 </script>

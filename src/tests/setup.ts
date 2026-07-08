@@ -99,3 +99,8 @@ global.AudioContext = vi.fn().mockImplementation(function AudioContextMock() {
     close: vi.fn().mockResolvedValue(undefined),
   };
 }) as any;
+
+// Mock de HTMLMediaElement.play (não implementado no jsdom), usado pelo
+// DictionaryModal para tocar a pronúncia do Free Dictionary API.
+window.HTMLMediaElement.prototype.play = vi.fn().mockResolvedValue(undefined);
+window.HTMLMediaElement.prototype.pause = vi.fn();

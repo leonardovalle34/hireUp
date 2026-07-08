@@ -10,6 +10,7 @@ const items = [
   { path: '/lessons', label: 'Aulas' },
   { path: '/quiz', label: 'Quiz' },
   { path: '/news', label: 'Notícias' },
+  { path: '/videos', label: 'Vídeos' },
   { path: '/pricing', label: 'Planos' },
 ];
 
