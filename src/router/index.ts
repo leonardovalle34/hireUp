@@ -80,6 +80,11 @@ const router = createRouter({
           component: () => import('@/views/NewsView.vue'),
           meta: { requiresAuth: true },
         },
+        {
+          path: 'videos',
+          component: () => import('@/views/VideosView.vue'),
+          meta: { requiresAuth: true },
+        },
       ],
     },
   ],
